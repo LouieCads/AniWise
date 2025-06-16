@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,86 @@ import {
   StatusBar,
   SafeAreaView,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Dashboard = () => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  const fetchUserProfile = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        console.log('No token found, redirecting to sign in');
+        router.replace('/sign-in');
+        return;
+      }
+
+      const response = await fetch('http://192.168.254.169:3000/api/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setUser(data.user);
+      } else {
+        console.log('Failed to fetch profile:', data.message);
+        // Only redirect if it's an authentication error
+        if (data.message === 'Invalid or expired token') {
+          await AsyncStorage.removeItem('token');
+          router.replace('/sign-in');
+        } else {
+          Alert.alert('Error', data.message);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      // Only redirect on network errors
+      if (error.message.includes('Network')) {
+        Alert.alert('Error', 'Network error. Please check your connection.');
+      } else {
+        Alert.alert('Error', 'Something went wrong. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+          isPreferred: true,
+        },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            await AsyncStorage.removeItem('token'); // Clear token using AsyncStorage
+            router.replace('/');
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#14532d" />
@@ -39,13 +113,20 @@ const Dashboard = () => {
                 <View style={styles.onlineIndicator} />
               </View>
               <View style={styles.headerText}>
-                <Text style={styles.greeting}>Hello, Lito! 👋</Text>
+                <Text style={styles.greeting}>
+                  Hello, {loading ? '...' : user?.name?.split(' ')[0] || 'User'}! 👋
+                </Text>
                 <Text style={styles.subtitle}>Ready to grow today?</Text>
               </View>
             </View>
-            <TouchableOpacity style={styles.menuButton}>
-              <Icon name="trending-up" size={24} color="#ffffff" />
-            </TouchableOpacity>
+            <View style={styles.headerRight}>
+              <TouchableOpacity style={styles.menuButton}>
+                <Icon name="trending-up" size={24} color="#ffffff" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                <Icon name="logout" size={24} color="#ffffff" />
+              </TouchableOpacity>
+            </View>
           </View>
         </LinearGradient>
 
@@ -86,7 +167,7 @@ const Dashboard = () => {
           style={styles.statsCard}
         >
           <View style={styles.statsHeader}>
-            <Text style={styles.statsTitle}>Estadistika ng ani</Text>
+            <Text style={styles.statsTitle}>Estadistika ng Ani</Text>
             <TouchableOpacity style={styles.moreButton}>
               <Icon name="more-horiz" size={20} color="#ffffff" />
             </TouchableOpacity>
@@ -309,7 +390,7 @@ const styles = StyleSheet.create({
   temperatureCard: {
     flex: 1,
     borderRadius: 20,
-    padding: 20,
+    padding: 15,
     alignItems: 'center',
     position: 'relative',
     shadowColor: '#000',
@@ -328,7 +409,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   temperature: {
-    fontSize: 28,
+    fontSize: 27,
     fontWeight: 'bold',
     color: '#0f172a',
     marginBottom: 4,
@@ -589,6 +670,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  logoutButton: {
+    width: 44,
+    height: 44,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
 });
 

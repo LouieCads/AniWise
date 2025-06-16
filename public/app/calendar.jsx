@@ -122,8 +122,8 @@ const Calendar = () => {
       <View style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Kalendaryo ng mga ani</Text>
-          <Text style={styles.subtitle}>Plano sa pagaani</Text>
+          <Text style={styles.title}>Kalendaryo ng mga Ani</Text>
+          <Text style={styles.subtitle}>Plano sa Pagaani</Text>
         </View>
 
         {/* Month Navigation */}
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   monthText: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: '700',
     color: '#1f2937',
   },

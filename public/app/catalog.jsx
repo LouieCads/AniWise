@@ -119,7 +119,7 @@ const CatalogPage = () => {
               </TouchableOpacity>
             </View>
 
-            {/* Row 2 */}
+            {/* // Row 2
             <View style={styles.seedRow}>
               <TouchableOpacity style={styles.seedCard}>
                 <View style={styles.seedImageContainer}>
@@ -150,7 +150,7 @@ const CatalogPage = () => {
                   <Text style={styles.seedDescription}>Sariwa at de-kalidad</Text>
                 </View>
               </TouchableOpacity>
-            </View>
+            </View> */}
           </View>
         </View>
 

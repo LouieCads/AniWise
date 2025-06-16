@@ -1,9 +1,53 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function SignIn() {
   const [form, setForm] = useState({ name: '', password: '' });
+  const [loading, setLoading] = useState(false);
+
+  const handleSignIn = async () => {
+    // Basic validation
+    if (!form.name || !form.password) {
+      Alert.alert('Error', 'Pangalan at password ay kailangan');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Replace 'YOUR_LOCAL_IP' with your actual local IP address
+      // You can find it by running 'ipconfig' (Windows) or 'ifconfig' (Mac/Linux)
+      const response = await fetch('http://192.168.254.169:3000/api/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(form),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Store the token in AsyncStorage
+        await AsyncStorage.setItem('token', data.token);
+        Alert.alert('Success', data.message, [
+          {
+            text: 'OK',
+            onPress: () => router.push('/dashboard')
+          }
+        ]);
+      } else {
+        Alert.alert('Error', data.message);
+      }
+    } catch (error) {
+      console.error('Sign-in error:', error);
+      Alert.alert('Error', 'Network error. Make sure the server is running.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -31,6 +75,7 @@ export default function SignIn() {
             value={form.name}
             onChangeText={(t) => setForm({ ...form, name: t })}
             autoCapitalize="none"
+            editable={!loading}
           />
         </View>
 
@@ -38,28 +83,35 @@ export default function SignIn() {
           <Text style={styles.label}>Password</Text>
           <TextInput
             style={styles.input}
-            placeholder="iloveyou123"
+            placeholder="aniwise123"
             placeholderTextColor="#a8b3a8"
             secureTextEntry
             value={form.password}
             onChangeText={(t) => setForm({ ...form, password: t })}
+            editable={!loading}
           />
         </View>
 
         <TouchableOpacity 
-          style={styles.button} 
-          onPress={() => router.push('/dashboard')}
+          style={[styles.button, loading && styles.buttonDisabled]} 
+          onPress={handleSignIn}
           activeOpacity={0.8}
+          disabled={loading}
         >
-          <Text style={styles.buttonText}>Mag Sign-in</Text>
+          <Text style={styles.buttonText}>
+            {loading ? 'Nagsisign-in...' : 'Mag Sign-in'}
+          </Text>
         </TouchableOpacity>
       </View>
 
       {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>
-          May account ka na? 
-          <Text style={styles.linkText}> Mag sign-in</Text>
+          Wala pang account? 
+          <Text 
+            style={styles.linkText}
+            onPress={() => router.push('/sign-up')}
+          > Mag sign-up</Text>
         </Text>
       </View>
     </View>
@@ -134,6 +186,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
+  },
+  buttonDisabled: {
+    backgroundColor: '#a8b3a8',
   },
   buttonText: {
     color: '#ffffff',

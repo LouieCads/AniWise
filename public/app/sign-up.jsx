@@ -1,16 +1,26 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, ScrollView, Alert } from 'react-native';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { Formik } from 'formik';
+import * as Yup from 'yup';
+
+const SignUpSchema = Yup.object().shape({
+  name: Yup.string()
+    .required('Pangalan ay kailangan')
+    .min(2, 'Pangalan ay masyadong maikli'),
+  contactNumber: Yup.string()
+    .required('Contact number ay kailangan')
+    .matches(/^[0-9]+$/, 'Contact number ay dapat mga numero lang')
+    .min(11, 'Contact number ay dapat 11 digits'),
+  organization: Yup.string()
+    .required('Organisasyon ay kailangan'),
+  location: Yup.string()
+    .required('Tirahan ay kailangan'),
+  password: Yup.string()
+    .required('Password ay kailangan')
+    .min(8, 'Password ay dapat 8 characters o higit pa'),
+});
 
 export default function SignUp() {
-  const [form, setForm] = useState({
-    name: '', 
-    contactNumber: '', 
-    organization: '', 
-    location: '', 
-    password: '',
-  });
-
   const fieldLabels = {
     name: 'Pangalan',
     contactNumber: 'Contact Number',
@@ -25,6 +35,36 @@ export default function SignUp() {
     organization: 'Makati LGU',
     location: 'Makati City, Metro Manila, Philippines',
     password: 'iloveyou123'
+  };
+
+  const handleSignUp = async (values, { setSubmitting }) => {
+    try {
+      const response = await fetch('http://192.168.254.169:3000/api/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        Alert.alert('Success', data.message, [
+          {
+            text: 'OK',
+            onPress: () => router.push('/sign-in')
+          }
+        ]);
+      } else {
+        Alert.alert('Error', data.message);
+      }
+    } catch (error) {
+      console.error('Sign-up error:', error);
+      Alert.alert('Error', 'Network error. Make sure the server is running.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -43,32 +83,56 @@ export default function SignUp() {
         {/* Header */}
         <Text style={styles.header}>Gumawa ng account</Text>
 
-        {/* Form Container */}
-        <View style={styles.formContainer}>
-          {Object.entries(form).map(([key, value]) => (
-            <View key={key} style={styles.inputGroup}>
-              <Text style={styles.label}>{fieldLabels[key]}</Text>
-              <TextInput
-                style={styles.input}
-                placeholder={fieldPlaceholders[key]}
-                placeholderTextColor="#a8b3a8"
-                secureTextEntry={key === 'password'}
-                value={value}
-                onChangeText={(t) => setForm({ ...form, [key]: t })}
-                autoCapitalize={key === 'name' ? 'words' : 'none'}
-                keyboardType={key === 'contactNumber' ? 'phone-pad' : 'default'}
-              />
-            </View>
-          ))}
+        <Formik
+          initialValues={{
+            name: '',
+            contactNumber: '',
+            organization: '',
+            location: '',
+            password: '',
+          }}
+          validationSchema={SignUpSchema}
+          onSubmit={handleSignUp}
+        >
+          {({ handleChange, handleBlur, handleSubmit, values, errors, touched, isSubmitting }) => (
+            <View style={styles.formContainer}>
+              {Object.keys(values).map((key) => (
+                <View key={key} style={styles.inputGroup}>
+                  <Text style={styles.label}>{fieldLabels[key]}</Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      touched[key] && errors[key] && styles.inputError
+                    ]}
+                    placeholder={fieldPlaceholders[key]}
+                    placeholderTextColor="#a8b3a8"
+                    secureTextEntry={key === 'password'}
+                    value={values[key]}
+                    onChangeText={handleChange(key)}
+                    onBlur={handleBlur(key)}
+                    autoCapitalize={key === 'name' ? 'words' : 'none'}
+                    keyboardType={key === 'contactNumber' ? 'phone-pad' : 'default'}
+                    editable={!isSubmitting}
+                  />
+                  {touched[key] && errors[key] && (
+                    <Text style={styles.errorText}>{errors[key]}</Text>
+                  )}
+                </View>
+              ))}
 
-          <TouchableOpacity 
-            style={styles.button} 
-            onPress={() => router.push('/dashboard')}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.buttonText}>Mag Sign-up</Text>
-          </TouchableOpacity>
-        </View>
+              <TouchableOpacity 
+                style={[styles.button, isSubmitting && styles.buttonDisabled]} 
+                onPress={handleSubmit}
+                activeOpacity={0.8}
+                disabled={isSubmitting}
+              >
+                <Text style={styles.buttonText}>
+                  {isSubmitting ? 'Nagsisign-up...' : 'Mag Sign-up'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </Formik>
 
         {/* Footer */}
         <View style={styles.footer}>
@@ -155,6 +219,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
   },
+  buttonDisabled: {
+    backgroundColor: '#a8b3a8',
+  },
   buttonText: {
     color: '#ffffff',
     fontSize: 18,
@@ -172,5 +239,13 @@ const styles = StyleSheet.create({
   linkText: {
     fontWeight: '600',
     color: '#2d5016',
+  },
+  inputError: {
+    borderColor: '#ff6b6b',
+  },
+  errorText: {
+    color: '#ff6b6b',
+    fontSize: 12,
+    marginTop: 4,
   },
 });
