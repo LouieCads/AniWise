@@ -47,25 +47,26 @@ export default function SignUp() {
         body: JSON.stringify(values),
       });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (data.success) {
-        Alert.alert('Success', data.message, [
-          {
-            text: 'OK',
-            onPress: () => router.push('/sign-in')
-          }
-        ]);
-      } else {
-        Alert.alert('Error', data.message);
-      }
-    } catch (error) {
-      console.error('Sign-up error:', error);
-      Alert.alert('Error', 'Network error. Make sure the server is running.');
-    } finally {
-      setSubmitting(false);
+    if (data.success) {
+      Alert.alert('Success', data.message, [
+        {
+          text: 'OK',
+          onPress: () => router.push('/mapping') // ✅ Route to /mapping
+        }
+      ]);
+    } else {
+      Alert.alert('Error', data.message);
     }
-  };
+  } catch (error) {
+    console.error('Sign-up error:', error);
+    Alert.alert('Error', 'Network error. Make sure the server is running.');
+  } finally {
+    setSubmitting(false);
+  }
+};
+
 
   return (
     <View style={styles.container}>
@@ -129,6 +130,20 @@ export default function SignUp() {
                 <Text style={styles.buttonText}>
                   {isSubmitting ? 'Nagsisign-up...' : 'Mag Sign-up'}
                 </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[styles.button, { backgroundColor: '#6c757d', marginTop: 10 }]} 
+                onPress={() => router.push('/mapping')}
+              >
+                <Text style={styles.buttonText}>Skip to Mapping</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[styles.button, { backgroundColor: '#6c757d', marginTop: 10 }]} 
+                onPress={() => router.push('/dashboard')}
+              >
+                <Text style={styles.buttonText}>Skip to Dashboard</Text>
               </TouchableOpacity>
             </View>
           )}

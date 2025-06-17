@@ -18,9 +18,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [credibilityScore, setCredibilityScore] = useState(10); // Example score
+  const [loanProgress, setLoanProgress] = useState({
+    totalAmount: 50000,
+    paidAmount: 32000,
+    remainingAmount: 18000,
+    progressPercentage: 64,
+    nextPaymentDate: 'May 15, 2025',
+    monthlyPayment: 5000
+  });
 
   useEffect(() => {
     fetchUserProfile();
+    // You can add API calls here to fetch credibility score and loan data
   }, []);
 
   const fetchUserProfile = async () => {
@@ -44,7 +54,6 @@ const Dashboard = () => {
         setUser(data.user);
       } else {
         console.log('Failed to fetch profile:', data.message);
-        // Only redirect if it's an authentication error
         if (data.message === 'Invalid or expired token') {
           await AsyncStorage.removeItem('token');
           router.replace('/sign-in');
@@ -54,7 +63,6 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
-      // Only redirect on network errors
       if (error.message.includes('Network')) {
         Alert.alert('Error', 'Network error. Please check your connection.');
       } else {
@@ -79,13 +87,25 @@ const Dashboard = () => {
           text: "Logout",
           style: "destructive",
           onPress: async () => {
-            await AsyncStorage.removeItem('token'); // Clear token using AsyncStorage
+            await AsyncStorage.removeItem('token');
             router.replace('/');
           },
         },
       ],
       { cancelable: true }
     );
+  };
+
+  const getCredibilityColor = (score) => {
+    if (score >= 75) return ['#10b981', '#059669', '#047857']; // Green
+    if (score >= 50) return ['#f59e0b', '#d97706', '#b45309']; // Orange
+    return ['#ef4444', '#dc2626', '#b91c1c']; // Red
+  };
+
+  const getCredibilityStatus = (score) => {
+    if (score >= 75) return 'Excellent';
+    if (score >= 50) return 'Good';
+    return 'Needs Improvement';
   };
 
   return (
@@ -161,113 +181,99 @@ const Dashboard = () => {
           </LinearGradient>
         </View>
 
-        {/* Statistics Card */}
+        {/* Credibility Score Card */}
         <LinearGradient
-          colors={['#10b981', '#059669', '#047857']}
-          style={styles.statsCard}
+          colors={getCredibilityColor(credibilityScore)}
+          style={styles.credibilityCard}
         >
-          <View style={styles.statsHeader}>
-            <Text style={styles.statsTitle}>Estadistika ng Ani</Text>
-            <TouchableOpacity style={styles.moreButton}>
-              <Icon name="more-horiz" size={20} color="#ffffff" />
+          <View style={styles.credibilityHeader}>
+            <View style={styles.credibilityTitleContainer}>
+              <Icon name="verified-user" size={24} color="#ffffff" />
+              <Text style={styles.credibilityTitle}>Credibility Score</Text>
+            </View>
+            <TouchableOpacity style={styles.infoButton}>
+              <Icon name="info-outline" size={20} color="#ffffff" />
             </TouchableOpacity>
           </View>
-          <View style={styles.statsContent}>
-            {/* Bar Chart */}
-            <View style={styles.barChart}>
-              <View style={styles.barContainer}>
-                <View style={[styles.bar, { height: 48 }]} />
-                <Text style={styles.barLabel}>M</Text>
-              </View>
-              <View style={styles.barContainer}>
-                <View style={[styles.bar, { height: 80 }]} />
-                <Text style={styles.barLabel}>T</Text>
-              </View>
-              <View style={styles.barContainer}>
-                <View style={[styles.bar, { height: 64 }]} />
-                <Text style={styles.barLabel}>W</Text>
-              </View>
-              <View style={styles.barContainer}>
-                <View style={[styles.bar, { height: 40 }]} />
-                <Text style={styles.barLabel}>T</Text>
-              </View>
-              <View style={styles.barContainer}>
-                <View style={[styles.bar, { height: 56 }]} />
-                <Text style={styles.barLabel}>F</Text>
+          
+          <View style={styles.credibilityContent}>
+            <View style={styles.scoreContainer}>
+              <Text style={styles.scoreNumber}>{credibilityScore}</Text>
+              <Text style={styles.scoreOutOf}>/100</Text>
+            </View>
+            <Text style={styles.scoreStatus}>{getCredibilityStatus(credibilityScore)}</Text>
+            
+            {/* Circular Progress */}
+            <View style={styles.circularProgress}>
+              <View style={styles.progressCircle}>
+                <View style={[styles.progressFill, { 
+                  transform: [{ rotate: `${(credibilityScore / 100) * 360}deg` }] 
+                }]} />
+                <View style={styles.progressCenter} />
               </View>
             </View>
-            
-            {/* Pie Chart */}
-            <View style={styles.pieChart}>
-              <View style={styles.pieBase}>
-                <View style={styles.pieSlice} />
-                <View style={styles.pieCenter}>
-                  <Text style={styles.pieText}>75%</Text>
-                </View>
-              </View>
+          </View>
+          
+          <View style={styles.credibilityFooter}>
+            <View style={styles.credibilityMetric}>
+              <Icon name="payment" size={16} color="rgba(255,255,255,0.8)" />
+              <Text style={styles.metricText}>Payment History</Text>
+            </View>
+            <View style={styles.credibilityMetric}>
+              <Icon name="account-balance" size={16} color="rgba(255,255,255,0.8)" />
+              <Text style={styles.metricText}>Credit Usage</Text>
             </View>
           </View>
         </LinearGradient>
 
-        {/* Tignan Section */}
-        <View style={styles.tignanSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Tignan</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAll}>See all</Text>
+        {/* Loan Progress Card */}
+        <View style={styles.loanCard}>
+          <View style={styles.loanHeader}>
+            <View style={styles.loanTitleContainer}>
+              <Icon name="account-balance-wallet" size={24} color="#10b981" />
+              <Text style={styles.loanTitle}>Loan Progress</Text>
+            </View>
+            <TouchableOpacity style={styles.loanDetailsButton}>
+              <Text style={styles.loanDetailsText}>Details</Text>
+              <Icon name="arrow-forward" size={16} color="#10b981" />
             </TouchableOpacity>
           </View>
-          
-          {/* Question Cards */}
-          <TouchableOpacity style={styles.questionCard}>
-            <View style={styles.questionImageContainer}>
-              <Image
-                source={{
-                  uri: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=100&h=80&fit=crop&auto=format'
-                }}
-                style={styles.questionImage}
-              />
-              <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.3)']}
-                style={styles.imageOverlay}
-              />
-            </View>
-            <View style={styles.questionContent}>
-              <Text style={styles.questionTitle}>Paano magtanim ng palay?</Text>
-              <Text style={styles.questionSubtitle}>
-                Panoorin kung paano ang pagtataruhan ng palay.
-              </Text>
-              <View style={styles.questionMeta}>
-                <Icon name="play-circle-outline" size={16} color="#10b981" />
-                <Text style={styles.duration}>5 min</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
 
-          <TouchableOpacity style={styles.questionCard}>
-            <View style={styles.questionImageContainer}>
-              <Image
-                source={{
-                  uri: 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=100&h=80&fit=crop&auto=format'
-                }}
-                style={styles.questionImage}
-              />
-              <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.3)']}
-                style={styles.imageOverlay}
-              />
+          <View style={styles.loanAmountContainer}>
+            <Text style={styles.loanLabel}>Total Loan Amount</Text>
+            <Text style={styles.loanAmount}>₱{loanProgress.totalAmount.toLocaleString()}</Text>
+          </View>
+
+          {/* Progress Bar */}
+          <View style={styles.progressBarContainer}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFillBar, { 
+                width: `${loanProgress.progressPercentage}%` 
+              }]} />
             </View>
-            <View style={styles.questionContent}>
-              <Text style={styles.questionTitle}>Paano magtanim ng palay?</Text>
-              <Text style={styles.questionSubtitle}>
-                Panoorin kung paano ang pagtataruhan ng palay.
-              </Text>
-              <View style={styles.questionMeta}>
-                <Icon name="play-circle-outline" size={16} color="#10b981" />
-                <Text style={styles.duration}>3 min</Text>
+            <Text style={styles.progressPercentage}>{loanProgress.progressPercentage}%</Text>
+          </View>
+
+          <View style={styles.loanDetails}>
+            <View style={styles.loanDetailRow}>
+              <View style={styles.loanDetailItem}>
+                <Text style={styles.loanDetailLabel}>Paid Amount</Text>
+                <Text style={styles.loanDetailValue}>₱{loanProgress.paidAmount.toLocaleString()}</Text>
+              </View>
+              <View style={styles.loanDetailItem}>
+                <Text style={styles.loanDetailLabel}>Remaining</Text>
+                <Text style={styles.loanDetailValue}>₱{loanProgress.remainingAmount.toLocaleString()}</Text>
               </View>
             </View>
-          </TouchableOpacity>
+            
+            <View style={styles.nextPaymentContainer}>
+              <View style={styles.nextPaymentInfo}>
+                <Icon name="calendar-today" size={16} color="#64748b" />
+                <Text style={styles.nextPaymentText}>Next Payment: {loanProgress.nextPaymentDate}</Text>
+              </View>
+              <Text style={styles.nextPaymentAmount}>₱{loanProgress.monthlyPayment.toLocaleString()}</Text>
+            </View>
+          </View>
         </View>
 
         {/* Bottom Navigation */}
@@ -455,7 +461,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderBottomLeftRadius: 20,
   },
-  statsCard: {
+  // Credibility Score Styles
+  credibilityCard: {
     margin: 20,
     borderRadius: 24,
     padding: 24,
@@ -465,18 +472,23 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 12,
   },
-  statsHeader: {
+  credibilityHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
   },
-  statsTitle: {
+  credibilityTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  credibilityTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#ffffff',
+    marginLeft: 8,
   },
-  moreButton: {
+  infoButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
@@ -484,143 +496,197 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  statsContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  barChart: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 12,
-    flex: 1,
-  },
-  barContainer: {
+  credibilityContent: {
     alignItems: 'center',
-    flex: 1,
+    marginBottom: 20,
   },
-  bar: {
-    width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderTopLeftRadius: 6,
-    borderTopRightRadius: 6,
+  scoreContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
     marginBottom: 8,
   },
-  barLabel: {
+  scoreNumber: {
+    fontSize: 48,
+    fontWeight: 'bold',
     color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
   },
-  pieChart: {
+  scoreOutOf: {
+    fontSize: 24,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginLeft: 4,
+  },
+  scoreStatus: {
+    fontSize: 16,
+    color: '#ffffff',
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  circularProgress: {
     width: 80,
     height: 80,
-    marginLeft: 24,
   },
-  pieBase: {
+  progressCircle: {
     width: 80,
     height: 80,
     borderRadius: 40,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     position: 'relative',
     overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  pieSlice: {
+  progressFill: {
     position: 'absolute',
-    top: -10,
-    right: -10,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 40,
+    height: 80,
     backgroundColor: '#ffffff',
+    right: 0,
+    transformOrigin: '0 40px',
   },
-  pieCenter: {
+  progressCenter: {
     position: 'absolute',
-    justifyContent: 'center',
+    top: 10,
+    left: 10,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  credibilityFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  credibilityMetric: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  pieText: {
-    color: '#ffffff',
+  metricText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  // Loan Progress Styles
+  loanCard: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  loanHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  loanTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  loanTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#0f172a',
+    marginLeft: 8,
+  },
+  loanDetailsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0fdf4',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  loanDetailsText: {
+    color: '#10b981',
+    fontSize: 14,
+    fontWeight: '600',
+    marginRight: 4,
+  },
+  loanAmountContainer: {
+    marginBottom: 20,
+  },
+  loanLabel: {
+    fontSize: 14,
+    color: '#64748b',
+    marginBottom: 4,
+  },
+  loanAmount: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#0f172a',
+  },
+  progressBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  progressBar: {
+    flex: 1,
+    height: 8,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginRight: 12,
+  },
+  progressFillBar: {
+    height: '100%',
+    backgroundColor: '#10b981',
+    borderRadius: 4,
+  },
+  progressPercentage: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#10b981',
+  },
+  loanDetails: {
+    marginTop: 12,
+  },
+  loanDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  loanDetailItem: {
+    flex: 1,
+  },
+  loanDetailLabel: {
+    fontSize: 12,
+    color: '#64748b',
+    marginBottom: 4,
+  },
+  loanDetailValue: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#0f172a',
+  },
+  nextPaymentContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
+  },
+  nextPaymentInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  nextPaymentText: {
+    fontSize: 14,
+    color: '#64748b',
+    marginLeft: 6,
+  },
+  nextPaymentAmount: {
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  tignanSection: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    color: '#10b981',
   },
   bottomSpacer: {
-    height: 100, // Space for fixed bottom navigation
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#0f172a',
-  },
-  seeAll: {
-    fontSize: 14,
-    color: '#10b981',
-    fontWeight: '600',
-  },
-  questionCard: {
-    flexDirection: 'row',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    marginBottom: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  questionImageContainer: {
-    position: 'relative',
-  },
-  questionImage: {
-    width: 100,
-    height: 90,
-  },
-  imageOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 30,
-  },
-  questionContent: {
-    flex: 1,
-    padding: 16,
-    justifyContent: 'space-between',
-  },
-  questionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0f172a',
-    marginBottom: 6,
-    lineHeight: 22,
-  },
-  questionSubtitle: {
-    fontSize: 13,
-    color: '#64748b',
-    lineHeight: 18,
-    marginBottom: 8,
-  },
-  questionMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  duration: {
-    fontSize: 12,
-    color: '#10b981',
-    marginLeft: 4,
-    fontWeight: '500',
+    height: 100,
   },
   bottomNavContainer: {
     position: 'absolute',
