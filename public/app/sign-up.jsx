@@ -53,7 +53,7 @@ export default function SignUp() {
       Alert.alert('Success', data.message, [
         {
           text: 'OK',
-          onPress: () => router.push('/mapping') // ✅ Route to /mapping
+          onPress: () => router.push('/sign-in') // ✅ Route to /mapping
         }
       ]);
     } else {
