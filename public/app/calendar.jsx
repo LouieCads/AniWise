@@ -56,7 +56,7 @@ const Calendar = () => {
     const startPadding = 2; // April starts on Wednesday (2 empty slots)
     
     // Days of the week headers
-    const weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+    const weekDays = ['L', 'L', 'M', 'M', 'H', 'B', 'S'];
 
     // Add empty slots for days before month starts
     for (let i = 0; i < startPadding; i++) {
@@ -84,7 +84,7 @@ const Calendar = () => {
   };
 
   const calendarDays = generateCalendarDays();
-  const weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+  const weekDays = ['L', 'L', 'M', 'M', 'H', 'B', 'S'];
 
   const renderCalendarDay = (dayInfo) => {
     if (dayInfo.isEmpty) {
@@ -221,7 +221,7 @@ const Calendar = () => {
           </TouchableOpacity>
           <TouchableOpacity style={styles.navButton} onPress={navigateToAlerts}>
             <Icon name="notifications" size={24} color="#6b7280" />
-            <Text style={styles.navLabel}>Alerts</Text>
+            <Text style={styles.navLabel}>Journal</Text>
           </TouchableOpacity>
         </LinearGradient>
       </View>
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   weekDaysHeader: {
     flexDirection: 'row',
     marginBottom: 16,
-    paddingHorizontal: 4,
+    justifyContent: 'space-between',
   },
   weekDayContainer: {
     flex: 1,
@@ -322,9 +322,11 @@ const styles = StyleSheet.create({
   calendarGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 7,
   },
   calendarDay: {
-    width: '14.28571%', // 1/7 of the width
+    width: '12.28571%', // 1/7 of the width
     aspectRatio: 1,
     borderRadius: 12,
     backgroundColor: '#f9fafb',
@@ -332,7 +334,8 @@ const styles = StyleSheet.create({
     borderColor: '#e5e7eb',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 4,
+    padding: 10,
+    margin: 1,
   },
   selectedDay: {
     backgroundColor: '#10b981',
@@ -346,7 +349,6 @@ const styles = StyleSheet.create({
   emptyDay: {
     width: '14.28571%',
     aspectRatio: 1,
-    marginBottom: 4,
   },
   dayText: {
     fontSize: 16,

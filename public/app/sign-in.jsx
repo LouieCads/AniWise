@@ -15,6 +15,7 @@ export default function SignIn() {
     // }
 
     // setLoading(true);
+    // setLoading(true);
 
     try {
       // Replace 'YOUR_LOCAL_IP' with your actual local IP address
@@ -27,6 +28,7 @@ export default function SignIn() {
       //   body: JSON.stringify(form),
       // });
 
+      // const data = await response.json();
       // const data = await response.json();
 
       // if (data.success) {

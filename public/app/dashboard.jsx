@@ -28,9 +28,18 @@ const Dashboard = () => {
     monthlyPayment: 5000
   });
 
+  // New state for static soil information
+  const [soilInfo, setSoilInfo] = useState({
+    moisture: '65%',
+    temperature: '28°C',
+    humidity: '78%',
+    lastUpdated: 'June 17, 2025, 10:00 AM' // Static date, adjust as needed
+  });
+
   useEffect(() => {
     fetchUserProfile();
     // You can add API calls here to fetch credibility score and loan data
+    // If you want to fetch dynamic soil data, this is where you'd add the API call.
   }, []);
 
   const fetchUserProfile = async () => {
@@ -276,6 +285,30 @@ const Dashboard = () => {
           </View>
         </View>
 
+        {/* Soil Information Card - Added Here */}
+        <View style={styles.soilInfoCard}>
+          <View style={styles.soilInfoHeader}>
+            <Icon name="grass" size={24} color="#059669" />
+            <Text style={styles.soilInfoTitle}>Soil Conditions</Text>
+          </View>
+          <View style={styles.soilInfoContent}>
+            <View style={styles.soilInfoRow}>
+              <Text style={styles.soilInfoLabel}>Moisture:</Text>
+              <Text style={styles.soilInfoValue}>{soilInfo.moisture}</Text>
+            </View>
+            <View style={styles.soilInfoRow}>
+              <Text style={styles.soilInfoLabel}>Temperature:</Text>
+              <Text style={styles.soilInfoValue}>{soilInfo.temperature}</Text>
+            </View>
+            <View style={styles.soilInfoRow}>
+              <Text style={styles.soilInfoLabel}>Humidity:</Text>
+              <Text style={styles.soilInfoValue}>{soilInfo.humidity}</Text>
+            </View>
+            <Text style={styles.soilInfoLastUpdated}>Last Updated: {soilInfo.lastUpdated}</Text>
+          </View>
+        </View>
+
+
         {/* Bottom Navigation */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
@@ -286,7 +319,7 @@ const Dashboard = () => {
           colors={['#ffffff', '#f8fafc']}
           style={styles.bottomNav}
         >
-          <TouchableOpacity style={styles.navButton}>
+          <TouchableOpacity style={styles.navButton } onPress={() => router.push('/weather')}>
             <Icon name="cloud" size={24} color="#6b7280" />
             <Text style={styles.navLabel}>Weather</Text>
           </TouchableOpacity>
@@ -306,9 +339,9 @@ const Dashboard = () => {
             <Icon name="shopping-cart" size={24} color="#6b7280" />
             <Text style={styles.navLabel} onPress={() => router.push('/catalog')}>Shop</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/alerts')}>
+          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/journal')}>
             <Icon name="notifications" size={24} color="#6b7280" />
-            <Text style={styles.navLabel}>Alerts</Text>
+            <Text style={styles.navLabel}>Journal</Text>
           </TouchableOpacity>
         </LinearGradient>
       </View>
@@ -684,6 +717,54 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#10b981',
+  },
+  // Soil Information Card Styles
+  soilInfoCard: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  soilInfoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  soilInfoTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#0f172a',
+    marginLeft: 8,
+  },
+  soilInfoContent: {
+    // Styles for the content section of the soil info card
+  },
+  soilInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  soilInfoLabel: {
+    fontSize: 16,
+    color: '#64748b',
+    fontWeight: '500',
+  },
+  soilInfoValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#0f172a',
+  },
+  soilInfoLastUpdated: {
+    fontSize: 12,
+    color: '#94a3b8',
+    marginTop: 12,
+    textAlign: 'right',
   },
   bottomSpacer: {
     height: 100,
