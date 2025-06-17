@@ -186,7 +186,7 @@ const CatalogPage = () => {
             </TouchableOpacity>
             <TouchableOpacity style={styles.navButton} onPress={() => router.push('/alerts')}>
                 <Icon name="notifications" size={24} color="#6b7280" />
-                <Text style={styles.navLabel}>Alerts</Text>
+                <Text style={styles.navLabel}>Journal</Text>
             </TouchableOpacity>
             </LinearGradient>
         </View>
