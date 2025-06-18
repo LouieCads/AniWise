@@ -1,4 +1,4 @@
-import React, { memo, useState, useEffect } from 'react';
+import React, { memo, useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,97 +11,114 @@ import {
   ScrollView,
   Dimensions,
   ActivityIndicator,
+  Modal,
+  TouchableWithoutFeedback,
+  FlatList, // Import FlatList for suggestions
 } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router'; // Import useLocalSearchParams
 
 const { width, height } = Dimensions.get('window');
 
-// Replace with your OpenWeather API key
-const OPENWEATHER_API_KEY = '98bb67c7b4f0e326ccdfebd2e15577f3';
+// Move API key to environment variables or secure storage
+const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY || '98bb67c7b4f0e326ccdfebd2e15577f3';
 
-function Mapping() {
+export default function Mapping() {
   const [farmLocation, setFarmLocation] = useState('');
   const [coordinates, setCoordinates] = useState({
-    latitude: 14.5176, // Default to Manila, Philippines
-    longitude: 121.0509,
+    latitude: 14.2393, // Default to Silang, Cavite, Philippines
+    longitude: 120.9769,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
   const [markerCoordinate, setMarkerCoordinate] = useState({
-    latitude: 14.5176,
-    longitude: 121.0509,
+    latitude: 14.2393,
+    longitude: 120.9769,
   });
   const [isMapReady, setIsMapReady] = useState(false);
   const [soilData, setSoilData] = useState(null);
   const [weatherData, setWeatherData] = useState(null);
   const [isLoadingSoil, setIsLoadingSoil] = useState(false);
+  const [showSoilModal, setShowSoilModal] = useState(false);
+  const [placeSuggestions, setPlaceSuggestions] = useState([]); // State for place suggestions
+  const [selectedFarmAddress, setSelectedFarmAddress] = useState(''); // Store the chosen farm address for post-confirm display
 
-  // Fetch soil conditions from OpenWeather API
-  const fetchSoilConditions = async (lat, lon) => {
+  // Function to fetch soil conditions from OpenWeather API
+  const fetchSoilConditions = useCallback(async (lat, lon, placeName = '') => {
     setIsLoadingSoil(true);
     try {
-      // Fetch current weather data for soil temperature estimation
       const weatherResponse = await fetch(
         `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=metric`
       );
-      const weatherResult = await weatherResponse.json();
 
-      if (weatherResponse.ok) {
-        setWeatherData(weatherResult);
-        
-        // Calculate estimated soil conditions based on weather data
-        const soilConditions = calculateSoilConditions(weatherResult);
-        setSoilData(soilConditions);
-      } else {
-        throw new Error(weatherResult.message || 'Failed to fetch weather data');
+      if (!weatherResponse.ok) {
+        throw new Error(`Weather API Error: ${weatherResponse.status}`);
       }
 
-      // Optional: Fetch UV Index for additional soil analysis
-      const uvResponse = await fetch(
-        `https://api.openweathermap.org/data/2.5/uvi?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}`
-      );
-      const uvResult = await uvResponse.json();
+      const weatherResult = await weatherResponse.json();
+      console.log('Weather data received:', weatherResult);
 
-      if (uvResponse.ok && soilData) {
-        setSoilData(prev => ({
-          ...prev,
-          uvIndex: uvResult.value
-        }));
+      setWeatherData(weatherResult);
+
+      const soilConditions = calculateSoilConditions(weatherResult);
+      // Add placeName to soilData, falling back to weatherResult.name if placeName is empty
+      setSoilData({ ...soilConditions, placeName: placeName || weatherResult.name || 'Unknown Place' }); 
+      setShowSoilModal(true);
+
+      try {
+        const uvResponse = await fetch(
+          `https://api.openweathermap.org/data/2.5/uvi?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}`
+        );
+
+        if (uvResponse.ok) {
+          const uvResult = await uvResponse.json();
+          console.log('UV data received:', uvResult);
+
+          setSoilData(prev => ({
+            ...prev,
+            uvIndex: uvResult.value || 0
+          }));
+        }
+      } catch (uvError) {
+        console.warn('UV Index fetch failed:', uvError);
       }
 
     } catch (error) {
       console.error('Error fetching soil conditions:', error);
-      Alert.alert('Error', 'Hindi ma-fetch ang soil conditions. Subukan ulit.');
+
+      let errorMessage = 'Hindi ma-fetch ang soil conditions.';
+      if (error.message.includes('401')) {
+        errorMessage = 'Invalid API key. Please check your OpenWeather API key.';
+      } else if (error.message.includes('Network')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      }
+
+      Alert.alert('Error', errorMessage + ' Subukan ulit.');
     } finally {
       setIsLoadingSoil(false);
     }
-  };
+  }, []); // Added fetchSoilConditions to useCallback dependencies
 
-  // Calculate soil conditions based on weather data
+  // Function to calculate soil conditions based on weather data
   const calculateSoilConditions = (weather) => {
     const temp = weather.main.temp;
     const humidity = weather.main.humidity;
     const pressure = weather.main.pressure;
     const windSpeed = weather.wind?.speed || 0;
-    
-    // Estimate soil temperature (usually 2-5°C lower than air temperature)
+
     const soilTemp = temp - 3;
-    
-    // Estimate soil moisture based on humidity and recent precipitation
+
     let soilMoisture = 'Medium';
     if (humidity > 80) soilMoisture = 'High';
     else if (humidity < 40) soilMoisture = 'Low';
-    
-    // Determine soil condition based on various factors
+
     let soilCondition = 'Good';
     if (soilTemp < 10 || soilTemp > 35) soilCondition = 'Poor';
     else if (humidity < 30 || humidity > 90) soilCondition = 'Fair';
-    
-    // pH estimation (simplified - would need actual soil data for accuracy)
+
     const estimatedPH = 6.5 + (humidity - 50) * 0.02;
-    
+
     return {
       temperature: soilTemp.toFixed(1),
       moisture: soilMoisture,
@@ -116,7 +133,7 @@ function Mapping() {
     };
   };
 
-  // Get soil condition color
+  // Function to get soil condition color
   const getSoilConditionColor = (condition) => {
     switch (condition) {
       case 'Good': return '#15803d';
@@ -126,36 +143,39 @@ function Mapping() {
     }
   };
 
-  // Simulate geocoding function (in real app, use actual geocoding service)
+  // Function to get temperature color and indication
+  const getTemperatureIndicator = (temp) => {
+    if (temp < 15) {
+      return { text: 'Malamig', color: '#0ea5e9' }; // Blue for cold
+    } else if (temp >= 15 && temp < 25) {
+      return { text: 'Katamtaman', color: '#15803d' }; // Green for moderate/warm
+    } else if (temp >= 25 && temp < 35) {
+      return { text: 'Mainit', color: '#f97316' }; // Orange for hot
+    } else {
+      return { text: 'Masyadong Mainit', color: '#dc2626' }; // Red for very hot
+    }
+  };
+
+  // Geocoding function using OpenWeather Geocoding API with suggestions
   const geocodeAddress = async (address) => {
     try {
-      // This is a placeholder - replace with actual geocoding service
-      // For demo purposes, we'll just move the marker to a sample location
-      if (address.toLowerCase().includes('manila')) {
-        return {
-          latitude: 14.5995,
-          longitude: 120.9842,
-        };
-      } else if (address.toLowerCase().includes('cebu')) {
-        return {
-          latitude: 10.3157,
-          longitude: 123.8854,
-        };
-      } else if (address.toLowerCase().includes('davao')) {
-        return {
-          latitude: 7.1907,
-          longitude: 125.4553,
-        };
-      } else {
-        // Random location in Philippines for demo
-        return {
-          latitude: 14.5176 + (Math.random() - 0.5) * 0.1,
-          longitude: 121.0509 + (Math.random() - 0.5) * 0.1,
-        };
+      const geocodeResponse = await fetch(
+        `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(address)}&limit=5&appid=${OPENWEATHER_API_KEY}` // Limit to 5 suggestions
+      );
+
+      if (!geocodeResponse.ok) {
+        throw new Error(`Geocoding API Error: ${geocodeResponse.status}`);
       }
+
+      const geocodeResult = await geocodeResponse.json();
+      return geocodeResult.map(location => ({
+        latitude: location.lat,
+        longitude: location.lon,
+        name: location.name + (location.state ? `, ${location.state}` : '') + (location.country ? `, ${location.country}` : '')
+      }));
     } catch (error) {
       console.error('Geocoding error:', error);
-      return null;
+      return [];
     }
   };
 
@@ -165,47 +185,66 @@ function Mapping() {
       return;
     }
 
-    const coords = await geocodeAddress(farmLocation);
-    if (coords) {
+    setIsLoadingSoil(true);
+    setPlaceSuggestions([]); // Clear suggestions on search
+    const results = await geocodeAddress(farmLocation);
+
+    if (results.length > 0) {
+      const firstResult = results[0];
       const newRegion = {
-        ...coords,
+        ...firstResult,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       };
       setCoordinates(newRegion);
-      setMarkerCoordinate(coords);
-      
-      // Fetch soil conditions for the new location
-      await fetchSoilConditions(coords.latitude, coords.longitude);
+      setMarkerCoordinate(firstResult);
+      // Automatically fetch soil conditions for the first result and display modal
+      await fetchSoilConditions(firstResult.latitude, firstResult.longitude, firstResult.name);
     } else {
+      setIsLoadingSoil(false);
       Alert.alert('Error', 'Hindi mahanap ang location. Subukan ulit.');
     }
   };
 
   const handleMapPress = async (event) => {
     const { coordinate } = event.nativeEvent;
+    console.log('Map pressed at:', coordinate);
     setMarkerCoordinate(coordinate);
-    
-    // Fetch soil conditions for the selected coordinate
-    await fetchSoilConditions(coordinate.latitude, coordinate.longitude);
+
+    // Reverse geocode to get a place name for the marker
+    try {
+      const reverseGeocodeResponse = await fetch(
+        `https://api.openweathermap.org/geo/1.0/reverse?lat=${coordinate.latitude}&lon=${coordinate.longitude}&limit=1&appid=${OPENWEATHER_API_KEY}`
+      );
+      let placeName = 'Piniling Lokasyon';
+      if (reverseGeocodeResponse.ok) {
+        const reverseGeocodeResult = await reverseGeocodeResponse.json();
+        if (reverseGeocodeResult.length > 0) {
+          const place = reverseGeocodeResult[0];
+          placeName = place.name + (place.state ? `, ${place.state}` : '') + (place.country ? `, ${place.country}` : '');
+          setFarmLocation(placeName); // Update farmLocation input with reverse geocoded name
+        }
+      }
+      await fetchSoilConditions(coordinate.latitude, coordinate.longitude, placeName);
+    } catch (error) {
+      console.error('Reverse geocoding error:', error);
+      await fetchSoilConditions(coordinate.latitude, coordinate.longitude, 'Piniling Lokasyon'); // Fallback
+    }
   };
 
   const handleConfirmLocation = () => {
-    if (!farmLocation.trim()) {
-      Alert.alert('Error', 'Paki-input ang farm location.');
+    if (!soilData) {
+      Alert.alert('Error', 'Walang napiling lokasyon o walang soil data. Paki-input ang farm location o pumili sa map.');
       return;
     }
-
-    const locationData = {
-      address: farmLocation,
-      coordinates: markerCoordinate,
-      soilConditions: soilData,
-      weatherData: weatherData
-    };
+    
+    // Use the place name from soilData if available, otherwise fallback to farmLocation
+    const currentSelectedAddress = soilData.placeName || farmLocation || 'Map Selected Location';
+    setSelectedFarmAddress(currentSelectedAddress); // Save chosen address
 
     Alert.alert(
-      'Confirm Location',
-      `Tama ba ang inyong farm location?\n\nAddress: ${farmLocation}\nCoordinates: ${markerCoordinate.latitude.toFixed(6)}, ${markerCoordinate.longitude.toFixed(6)}${soilData ? `\nSoil Condition: ${soilData.condition}` : ''}`,
+      'Kumpirmahin ang Lokasyon',
+      `Tama ba ang napili mong farm location?\n\nFarm: ${currentSelectedAddress}\nKalagayan ng Lupa: ${soilData.condition}`,
       [
         {
           text: 'Hindi',
@@ -214,12 +253,35 @@ function Mapping() {
         {
           text: 'Oo, tama',
           onPress: () => {
-            console.log('Farm location saved:', locationData);
-            Alert.alert('Success', 'Farm location at soil conditions successfully saved!', [
+            console.log('Farm location saved:', {
+              address: currentSelectedAddress,
+              coordinates: markerCoordinate,
+              soilConditions: soilData,
+              weatherData: weatherData
+            });
+            Alert.alert('Tagumpay!', 'Matagumpay na naitala ang iyong farm location at kalagayan ng lupa!', [
               {
                 text: 'OK',
                 onPress: () => {
-                  router.push('/dashboard');
+                  // Navigate to a new screen or update state to show confirmed details
+                  router.push({
+                    pathname: '/confirmed-farm', // Assuming you have a route for confirmed farm details
+                    params: {
+                      farmAddress: currentSelectedAddress,
+                      soilCondition: soilData.condition,
+                      soilTemperature: soilData.temperature,
+                      soilMoisture: soilData.moisture,
+                      soilPH: soilData.pH,
+                      uvIndex: soilData.uvIndex,
+                      weatherDescription: soilData.description,
+                      airTemp: soilData.airTemp,
+                      humidity: soilData.humidity,
+                      windSpeed: soilData.windSpeed,
+                      pressure: soilData.pressure,
+                      latitude: markerCoordinate.latitude,
+                      longitude: markerCoordinate.longitude,
+                    },
+                  });
                 },
               },
             ]);
@@ -231,17 +293,23 @@ function Mapping() {
 
   const getCurrentLocation = async () => {
     Alert.alert(
-      'Current Location',
-      'Getting your current location...',
+      'Kasalukuyang Lokasyon',
+      'Kinukuha ang iyong kasalukuyang lokasyon...',
       [
         {
-          text: 'OK',
+          text: 'Kanselahin',
+          style: 'cancel',
+        },
+        {
+          text: 'Sige',
           onPress: async () => {
-            // Simulate current location
+            // In a real app, use Expo Location or react-native-geolocation-service
             const currentCoords = {
-              latitude: 14.5176 + (Math.random() - 0.5) * 0.05,
-              longitude: 121.0509 + (Math.random() - 0.5) * 0.05,
+              latitude: 14.2393 + (Math.random() - 0.01), // Silang, Cavite
+              longitude: 120.9769 + (Math.random() - 0.01), // Silang, Cavite
             };
+            
+            console.log('Current location:', currentCoords);
             setCoordinates({
               ...currentCoords,
               latitudeDelta: 0.01,
@@ -249,35 +317,183 @@ function Mapping() {
             });
             setMarkerCoordinate(currentCoords);
             
-            // Fetch soil conditions for current location
-            await fetchSoilConditions(currentCoords.latitude, currentCoords.longitude);
+            // Reverse geocode to get a place name for the current location
+            try {
+              const reverseGeocodeResponse = await fetch(
+                `https://api.openweathermap.org/geo/1.0/reverse?lat=${currentCoords.latitude}&lon=${currentCoords.longitude}&limit=1&appid=${OPENWEATHER_API_KEY}`
+              );
+              let placeName = 'Kasalukuyang Lokasyon';
+              if (reverseGeocodeResponse.ok) {
+                const reverseGeocodeResult = await reverseGeocodeResponse.json();
+                if (reverseGeocodeResult.length > 0) {
+                  const place = reverseGeocodeResult[0];
+                  placeName = place.name + (place.state ? `, ${place.state}` : '') + (place.country ? `, ${place.country}` : '');
+                  setFarmLocation(placeName); // Update farmLocation input
+                }
+              }
+              await fetchSoilConditions(currentCoords.latitude, currentCoords.longitude, placeName);
+            } catch (error) {
+              console.error('Reverse geocoding error for current location:', error);
+              await fetchSoilConditions(currentCoords.latitude, currentCoords.longitude, 'Kasalukuyang Lokasyon'); // Fallback
+            }
           },
         },
       ]
     );
   };
 
-  // Fetch initial soil conditions
+  // Handle text input changes for address suggestions
+  const handleAddressInputChange = async (text) => {
+    setFarmLocation(text);
+    if (text.length > 2) { // Fetch suggestions after 2 characters
+      const suggestions = await geocodeAddress(text);
+      setPlaceSuggestions(suggestions);
+    } else {
+      setPlaceSuggestions([]);
+    }
+  };
+
+  // Handle selecting a suggestion
+  const handleSelectSuggestion = async (suggestion) => {
+    setFarmLocation(suggestion.name);
+    setPlaceSuggestions([]); // Clear suggestions after selection
+
+    const newRegion = {
+      ...suggestion,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    };
+    setCoordinates(newRegion);
+    setMarkerCoordinate(suggestion);
+    await fetchSoilConditions(suggestion.latitude, suggestion.longitude, suggestion.name);
+  };
+
+
   useEffect(() => {
-    fetchSoilConditions(markerCoordinate.latitude, markerCoordinate.longitude);
-  }, []);
+    // Initial fetch for the default marker location (Silang, Calabarzon, Philippines)
+    fetchSoilConditions(markerCoordinate.latitude, markerCoordinate.longitude, 'Silang, Calabarzon, Philippines');
+  }, [fetchSoilConditions, markerCoordinate.latitude, markerCoordinate.longitude]); // Added dependencies to useEffect
+
+  // This component will be used if you set up an Expo Router route named `/confirmed-farm`
+  // You should move this to a separate file like app/confirmed-farm.js
+  const ConfirmedFarmDetails = ({ route }) => {
+    // Use useLocalSearchParams to get params directly
+    const params = useLocalSearchParams(); 
+    const {
+      farmAddress,
+      soilCondition,
+      soilTemperature,
+      soilMoisture,
+      soilPH,
+      uvIndex,
+      weatherDescription,
+      airTemp,
+      humidity,
+      windSpeed,
+      pressure,
+      latitude,
+      longitude
+    } = params;
+
+    const getConditionColor = (condition) => {
+      switch (condition) {
+        case 'Good': return '#15803d';
+        case 'Fair': return '#f59e0b';
+        case 'Poor': return '#dc2626';
+        default: return '#6b7280';
+      }
+    };
+
+    const airTempIndicator = getTemperatureIndicator(parseFloat(airTemp));
+    const soilTempIndicator = getTemperatureIndicator(parseFloat(soilTemperature));
+
+
+    return (
+      <SafeAreaView style={styles.confirmedContainer}>
+        <StatusBar barStyle="dark-content" backgroundColor="#f1f5f9" />
+        <ScrollView contentContainerStyle={styles.confirmedContent}>
+          <Text style={styles.confirmedTitle}>Iyong Napiling Farm</Text>
+          <View style={styles.confirmedCard}>
+            <Text style={styles.confirmedLabel}>Lokasyon ng Farm:</Text>
+            <Text style={styles.confirmedValue}>{farmAddress}</Text>
+          </View>
+
+          <View style={[styles.confirmedCard, { borderColor: getConditionColor(soilCondition), borderLeftWidth: 8 }]}>
+            <Text style={styles.confirmedLabel}>Kalagayan ng Lupa:</Text>
+            <Text style={[styles.confirmedValue, { color: getConditionColor(soilCondition), fontSize: 28 }]}>{soilCondition}</Text>
+          </View>
+
+          <View style={styles.confirmedGrid}>
+            <View style={styles.confirmedGridItem}>
+              <Icon name="thermostat" size={24} color={soilTempIndicator.color} />
+              <Text style={styles.confirmedGridLabel}>Temperatura ng Lupa</Text>
+              <Text style={[styles.confirmedGridValue, { color: soilTempIndicator.color }]}>
+                {soilTemperature}°C ({soilTempIndicator.text})
+              </Text>
+            </View>
+            <View style={styles.confirmedGridItem}>
+              <Icon name="water-drop" size={24} color="#3b82f6" />
+              <Text style={styles.confirmedGridLabel}>Moisture ng Lupa</Text>
+              <Text style={styles.confirmedGridValue}>{soilMoisture}</Text>
+            </View>
+            <View style={styles.confirmedGridItem}>
+              <Icon name="science" size={24} color="#8b5cf6" />
+              <Text style={styles.confirmedGridLabel}>Antas ng pH</Text>
+              <Text style={styles.confirmedGridValue}>{soilPH}</Text>
+            </View>
+            {uvIndex !== undefined && (
+              <View style={styles.confirmedGridItem}>
+                <Icon name="wb-sunny" size={24} color="#f59e0b" />
+                <Text style={styles.confirmedGridLabel}>UV Index</Text>
+                <Text style={styles.confirmedGridValue}>{uvIndex}</Text>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.weatherSummaryCard}>
+            <Text style={styles.weatherSummaryTitle}>Kasalukuyang Panahon sa Farm:</Text>
+            <Text style={styles.weatherSummaryText}>
+              {weatherDescription} • <Text style={{ color: airTempIndicator.color }}>{airTemp}°C ({airTempIndicator.text})</Text> • {humidity}% humidity
+            </Text>
+            <Text style={styles.weatherSummaryText}>
+              Lakas ng Hangin: {windSpeed} m/s • Presyon: {pressure} hPa
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.backToMapButton}
+            onPress={() => router.replace('/mapping')} // Go back to the mapping screen
+          >
+            <Icon name="map" size={20} color="#ffffff" style={styles.confirmIcon} />
+            <Text style={styles.backToMapButtonText}>Bumalik sa Map</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  };
+
+  // Render ConfirmedFarmDetails only if farmAddress param is present
+  const params = useLocalSearchParams();
+  if (params.farmAddress) {
+    return <ConfirmedFarmDetails route={{ params: params }} />;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f1f5f9" />
-      
+
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
         >
           <Icon name="chevron-left" size={24} color="#ffffff" />
         </TouchableOpacity>
-        
-        <Text style={styles.headerTitle}>Farm Location</Text>
-        
-        <TouchableOpacity 
+
+        <Text style={styles.headerTitle}>Lokasyon ng Farm</Text>
+
+        <TouchableOpacity
           style={styles.currentLocationButton}
           onPress={getCurrentLocation}
         >
@@ -290,69 +506,52 @@ function Mapping() {
         <View style={styles.welcomeSection}>
           <Text style={styles.welcomeTitle}>Tukuyin ang Inyong Farm</Text>
           <Text style={styles.welcomeSubtitle}>
-            Para mas mapadali ang delivery at mga serbisyo, pakiinput ang eksaktong location ng inyong farm.
+            Para mas mapadali ang delivery at mga serbisyo, paki-input ang eksaktong lokasyon ng inyong farm.
           </Text>
         </View>
 
-        {/* Soil Conditions Section */}
-        {soilData && (
-          <View style={styles.soilSection}>
-            <View style={styles.soilHeader}>
-              <Icon name="eco" size={24} color="#15803d" />
-              <Text style={styles.soilTitle}>Soil Conditions</Text>
-              {isLoadingSoil && <ActivityIndicator size="small" color="#87BE42" />}
-            </View>
-            
-            <View style={styles.soilGrid}>
-              <View style={styles.soilCard}>
-                <Icon name="thermostat" size={20} color="#87BE42" />
-                <Text style={styles.soilLabel}>Soil Temp</Text>
-                <Text style={styles.soilValue}>{soilData.temperature}°C</Text>
-              </View>
-              
-              <View style={styles.soilCard}>
-                <Icon name="water-drop" size={20} color="#3b82f6" />
-                <Text style={styles.soilLabel}>Moisture</Text>
-                <Text style={styles.soilValue}>{soilData.moisture}</Text>
-              </View>
-              
-              <View style={[styles.soilCard, { borderLeftColor: getSoilConditionColor(soilData.condition) }]}>
-                <Icon name="check-circle" size={20} color={getSoilConditionColor(soilData.condition)} />
-                <Text style={styles.soilLabel}>Condition</Text>
-                <Text style={[styles.soilValue, { color: getSoilConditionColor(soilData.condition) }]}>
-                  {soilData.condition}
-                </Text>
-              </View>
-              
-              <View style={styles.soilCard}>
-                <Icon name="science" size={20} color="#8b5cf6" />
-                <Text style={styles.soilLabel}>pH Level</Text>
-                <Text style={styles.soilValue}>{soilData.pH}</Text>
-              </View>
-            </View>
-            
-            <View style={styles.weatherInfo}>
-              <Text style={styles.weatherDescription}>
-                Current: {soilData.description} • {soilData.airTemp}°C • {soilData.humidity}% humidity
-              </Text>
-            </View>
+        {/* Instructions */}
+        <View style={styles.instructionsSection}>
+          <View style={styles.instructionItem}>
+            <Icon name="edit-location" size={20} color="#15803d" />
+            <Text style={styles.instructionText}>
+              I-type ang address sa input box at pindutin ang search
+            </Text>
           </View>
-        )}
+          <View style={styles.instructionItem}>
+            <Icon name="touch-app" size={20} color="#15803d" />
+            <Text style={styles.instructionText}>
+              O kaya i-tap ang eksaktong lokasyon sa map
+            </Text>
+          </View>
+          <View style={styles.instructionItem}>
+            <Icon name="my-location" size={20} color="#15803d" />
+            <Text style={styles.instructionText}>
+              Pindutin ang location icon para sa kasalukuyang lokasyon
+            </Text>
+          </View>
+          <View style={styles.instructionItem}>
+            <Icon name="eco" size={20} color="#15803d" />
+            <Text style={styles.instructionText}>
+              Makikita ang soil conditions sa bawat lokasyon
+            </Text>
+          </View>
+        </View>
 
         {/* Input Section */}
         <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>Farm Address</Text>
+          <Text style={styles.inputLabel}>Address ng Farm</Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.addressInput}
               value={farmLocation}
-              onChangeText={setFarmLocation}
+              onChangeText={handleAddressInputChange} // Use new handler for suggestions
               placeholder="Ilagay ang address ng farm (Brgy, Municipality, Province)"
               placeholderTextColor="#9ca3af"
               multiline={true}
               numberOfLines={2}
             />
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.searchButton}
               onPress={handleSearchLocation}
               disabled={isLoadingSoil}
@@ -364,8 +563,25 @@ function Mapping() {
               )}
             </TouchableOpacity>
           </View>
+          {placeSuggestions.length > 0 && (
+            <View style={styles.suggestionsContainer}>
+              <FlatList
+                data={placeSuggestions}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.suggestionItem}
+                    onPress={() => handleSelectSuggestion(item)}
+                  >
+                    <Text style={styles.suggestionText}>{item.name}</Text>
+                  </TouchableOpacity>
+                )}
+                keyboardShouldPersistTaps="always"
+              />
+            </View>
+          )}
           <Text style={styles.inputHint}>
-            Pwede ring i-tap sa map ang eksaktong location
+            Pwede ring i-tap sa map ang eksaktong lokasyon
           </Text>
         </View>
 
@@ -385,51 +601,24 @@ function Mapping() {
             >
               <Marker
                 coordinate={markerCoordinate}
-                title="Inyong Farm"
-                description={farmLocation || "Farm Location"}
+                title="Iyong Farm"
+                description={farmLocation || "Lokasyon ng Farm"}
                 pinColor="#15803d"
               />
             </MapView>
-            
+
             {!isMapReady && (
               <View style={styles.mapLoadingOverlay}>
-                <Text style={styles.mapLoadingText}>Loading map...</Text>
+                <ActivityIndicator size="large" color="#87BE42" />
+                <Text style={styles.mapLoadingText}>Nila-load ang mapa...</Text>
               </View>
             )}
           </View>
-          
+
           <View style={styles.coordinatesContainer}>
             <Text style={styles.coordinatesLabel}>Coordinates:</Text>
             <Text style={styles.coordinatesText}>
               {markerCoordinate.latitude.toFixed(6)}, {markerCoordinate.longitude.toFixed(6)}
-            </Text>
-          </View>
-        </View>
-
-        {/* Instructions */}
-        <View style={styles.instructionsSection}>
-          <View style={styles.instructionItem}>
-            <Icon name="edit-location" size={20} color="#15803d" />
-            <Text style={styles.instructionText}>
-              I-type ang address sa input box at pindutin ang search
-            </Text>
-          </View>
-          <View style={styles.instructionItem}>
-            <Icon name="touch-app" size={20} color="#15803d" />
-            <Text style={styles.instructionText}>
-              O kaya i-tap ang eksaktong location sa map
-            </Text>
-          </View>
-          <View style={styles.instructionItem}>
-            <Icon name="my-location" size={20} color="#15803d" />
-            <Text style={styles.instructionText}>
-              Pindutin ang location icon para sa current location
-            </Text>
-          </View>
-          <View style={styles.instructionItem}>
-            <Icon name="eco" size={20} color="#15803d" />
-            <Text style={styles.instructionText}>
-              Makikita ang soil conditions sa bawat location
             </Text>
           </View>
         </View>
@@ -440,15 +629,112 @@ function Mapping() {
 
       {/* Fixed Bottom Button */}
       <View style={styles.bottomActions}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.confirmButton, isLoadingSoil && styles.confirmButtonDisabled]}
           onPress={handleConfirmLocation}
           disabled={isLoadingSoil}
         >
           <Icon name="check-circle" size={20} color="#ffffff" style={styles.confirmIcon} />
-          <Text style={styles.confirmButtonText}>Confirm Farm Location</Text>
+          <Text style={styles.confirmButtonText}>
+            {isLoadingSoil ? 'Nila-load...' : 'Kumpirmahin ang Lokasyon ng Farm'}
+          </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Soil Condition Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showSoilModal}
+        onRequestClose={() => setShowSoilModal(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setShowSoilModal(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <TouchableOpacity style={styles.closeModalButton} onPress={() => setShowSoilModal(false)}>
+                <Icon name="close" size={24} color="#6b7280" />
+              </TouchableOpacity>
+
+              <View style={styles.soilHeader}>
+                <Icon name="eco" size={28} color="#15803d" />
+                <Text style={styles.modalTitle}>Mga Kondisyon ng Lupa</Text>
+              </View>
+
+              {/* Display Place Name in Modal */}
+              {soilData?.placeName && (
+                <Text style={styles.modalPlaceName}>{soilData.placeName}</Text>
+              )}
+
+              {soilData ? (
+                <>
+                  <View style={styles.soilGridModal}>
+                    <View style={styles.soilCardModal}>
+                      <Icon name="thermostat" size={24} color={getTemperatureIndicator(parseFloat(soilData.temperature)).color} />
+                      <Text style={styles.soilLabelModal}>Temperatura ng Lupa</Text>
+                      <Text style={[styles.soilValueModal, { color: getTemperatureIndicator(parseFloat(soilData.temperature)).color }]}>
+                        {soilData.temperature}°C ({getTemperatureIndicator(parseFloat(soilData.temperature)).text})
+                      </Text>
+                    </View>
+
+                    <View style={styles.soilCardModal}>
+                      <Icon name="water-drop" size={24} color="#3b82f6" />
+                      <Text style={styles.soilLabelModal}>Moisture</Text>
+                      <Text style={styles.soilValueModal}>{soilData.moisture}</Text>
+                    </View>
+
+                    <View style={[styles.soilCardModal, { borderLeftColor: getSoilConditionColor(soilData.condition) }]}>
+                      <Icon name="check-circle" size={24} color={getSoilConditionColor(soilData.condition)} />
+                      <Text style={styles.soilLabelModal}>Kondisyon</Text>
+                      <Text style={[styles.soilValueModal, { color: getSoilConditionColor(soilData.condition) }]}>
+                        {soilData.condition}
+                      </Text>
+                    </View>
+
+                    {/* <View style={styles.soilCardModal}>
+                      <Icon name="science" size={24} color="#8b5cf6" />
+                      <Text style={styles.soilLabelModal}>Antas ng pH</Text>
+                      <Text style={styles.soilValueModal}>{soilData.pH}</Text>
+                    </View> */}
+
+                    {soilData.uvIndex !== undefined && ( // Check if uvIndex exists
+                      <View style={styles.soilCardModal}>
+                        <Icon name="wb-sunny" size={24} color="#f59e0b" />
+                        <Text style={styles.soilLabelModal}>UV Index</Text>
+                        <Text style={styles.soilValueModal}>{soilData.uvIndex}</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <View style={styles.weatherInfoModal}>
+                    <Text style={styles.weatherDescriptionModal}>
+                      Kasalukuyang Panahon: {soilData.description} • <Text style={{ color: getTemperatureIndicator(parseFloat(soilData.airTemp)).color }}>{soilData.airTemp}°C ({getTemperatureIndicator(parseFloat(soilData.airTemp)).text})</Text> • {soilData.humidity}% humidity
+                    </Text>
+                    <Text style={styles.weatherDescriptionModal}>
+                      Lakas ng Hangin: {soilData.windSpeed} m/s • Presyon: {soilData.pressure} hPa
+                    </Text>
+                  </View>
+
+                  {/* "Choose this Farm" Button */}
+                  <TouchableOpacity
+                    style={styles.chooseFarmButton}
+                    onPress={() => {
+                      setFarmLocation(soilData.placeName || farmLocation); // Set the input to the chosen name
+                      setSelectedFarmAddress(soilData.placeName || farmLocation); // Store for confirmation
+                      setMarkerCoordinate({ latitude: coordinates.latitude, longitude: coordinates.longitude }); // Ensure marker is set
+                      setShowSoilModal(false); // Close the modal
+                      // The confirm button will now use this pre-selected farm location
+                    }}
+                  >
+                    <Text style={styles.chooseFarmButtonText}>Piliin itong Farm</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <Text style={styles.noDataText}>Walang available na soil data.</Text>
+              )}
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -465,37 +751,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 16,
+    backgroundColor: '#87BE42', // Green header for better visibility
   },
   backButton: {
     width: 48,
     height: 48,
-    backgroundColor: '#87BE42',
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#0f172a',
+    color: '#ffffff', // White text for header title
   },
   currentLocationButton: {
     width: 48,
     height: 48,
-    backgroundColor: '#87BE42',
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
   },
   content: {
     flex: 1,
@@ -526,74 +801,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-  soilSection: {
-    backgroundColor: '#ffffff',
-    marginHorizontal: 20,
-    marginBottom: 16,
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  soilHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  soilTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#15803d',
-    marginLeft: 8,
-    flex: 1,
-  },
-  soilGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  soilCard: {
-    width: '48%',
-    backgroundColor: '#f9fafb',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: '#87BE42',
-    alignItems: 'center',
-  },
-  soilLabel: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  soilValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#374151',
-    marginTop: 2,
-    textAlign: 'center',
-  },
-  weatherInfo: {
-    backgroundColor: '#f0f9ff',
-    borderRadius: 8,
-    padding: 12,
-    borderLeftWidth: 3,
-    borderLeftColor: '#3b82f6',
-  },
-  weatherDescription: {
-    fontSize: 14,
-    color: '#1e40af',
-    textAlign: 'center',
-  },
   inputSection: {
     paddingHorizontal: 20,
     marginBottom: 24,
+    zIndex: 10, // Ensure input and suggestions are above map
   },
   inputLabel: {
     fontSize: 16,
@@ -638,6 +849,28 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
   },
+  suggestionsContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    marginTop: 4,
+    maxHeight: 200, // Limit height of suggestions list
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  suggestionItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  suggestionText: {
+    fontSize: 15,
+    color: '#374151',
+  },
   mapSection: {
     paddingHorizontal: 20,
     marginBottom: 24,
@@ -653,107 +886,373 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: '#ffffff',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    height: 300, // Fixed height for map
+    width: '100%',
   },
   map: {
-    width: '100%',
-    height: 300,
+    ...StyleSheet.absoluteFillObject,
   },
   mapLoadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 16,
   },
   mapLoadingText: {
+    marginTop: 10,
+    color: '#374151',
     fontSize: 16,
-    color: '#6b7280',
   },
   coordinatesContainer: {
-    backgroundColor: '#f9fafb',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 12,
+    backgroundColor: '#e2e8f0',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
   coordinatesLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: '#4b5563',
+    marginRight: 6,
   },
   coordinatesText: {
     fontSize: 14,
-    color: '#15803d',
-    fontFamily: 'monospace',
+    color: '#4b5563',
   },
   instructionsSection: {
     paddingHorizontal: 20,
-    marginBottom: 20,
+    marginBottom: 24,
+    backgroundColor: '#ffffff',
+    marginHorizontal: 20,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 6,
+    paddingVertical: 24,
   },
   instructionItem: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    paddingHorizontal: 10,
   },
   instructionText: {
-    flex: 1,
+    marginLeft: 10,
     fontSize: 14,
     color: '#374151',
-    marginLeft: 12,
-    lineHeight: 18,
+    flexShrink: 1,
   },
   bottomSpacer: {
-    height: 100,
+    height: 100, // Space for the fixed bottom button
   },
   bottomActions: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    paddingTop: 16,
     backgroundColor: '#f1f5f9',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 24,
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 8,
   },
   confirmButton: {
-    backgroundColor: '#87BE42',
+    backgroundColor: '#15803d',
     borderRadius: 16,
     paddingVertical: 16,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowColor: '#15803d',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
     shadowRadius: 12,
-    elevation: 6,
+    elevation: 10,
   },
   confirmButtonDisabled: {
     backgroundColor: '#9ca3af',
+    shadowColor: 'transparent',
+    elevation: 0,
+  },
+  confirmButtonText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
   confirmIcon: {
     marginRight: 8,
   },
-  confirmButtonText: {
-    fontSize: 16,
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20, // Reduced padding
+    width: '90%', // Adjusted width
+    maxHeight: '80%', // Adjusted maxHeight to fit more content
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 15,
+  },
+  closeModalButton: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    zIndex: 1,
+    padding: 5,
+  },
+  soilHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  modalTitle: {
+    fontSize: 21,
+    fontWeight: 'bold',
+    color: '#15803d',
+    marginLeft: 10,
+  },
+  modalPlaceName: {
+    fontSize: 17,
     fontWeight: '600',
+    color: '#374151',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  soilGridModal: {
+    width: '100%',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 15, // Reduced margin
+  },
+  soilCardModal: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    padding: 12, // Reduced padding
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '48%', // Adjusted width for two columns
+    marginVertical: 6, // Reduced vertical margin
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  soilLabelModal: {
+    fontSize: 12, // Smaller font size
+    color: '#6b7280',
+    marginTop: 8,
+    marginBottom: 4,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  soilValueModal: {
+    fontSize: 16, // Smaller font size
+    fontWeight: 'bold',
+    color: '#374151',
+    textAlign: 'center',
+  },
+  weatherInfoModal: {
+    backgroundColor: '#e0f2f7', // Light blue background
+    borderRadius: 12,
+    padding: 12, // Reduced padding
+    width: '100%',
+    marginBottom: 32, // Reduced margin
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  weatherDescriptionModal: {
+    fontSize: 14, // Smaller font size
+    color: '#075985', // Darker blue for text
+    textAlign: 'center',
+    lineHeight: 20, // Reduced line height
+  },
+  chooseFarmButton: {
+    backgroundColor: '#87BE42',
+    borderRadius: 12,
+    paddingVertical: 12, // Reduced padding
+    paddingHorizontal: 15, // Reduced padding
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    shadowColor: '#87BE42',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  chooseFarmButtonText: {
     color: '#ffffff',
+    fontSize: 15, // Slightly smaller font size
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  noDataText: {
+    fontSize: 16,
+    color: '#ef4444',
+    textAlign: 'center',
+    marginTop: 20,
+  },
+
+  // Confirmed Farm Details Styles
+  confirmedContainer: {
+    flex: 1,
+    backgroundColor: '#f1f5f9',
+  },
+  confirmedContent: {
+    paddingHorizontal: 20,
+    paddingVertical: 30,
+    alignItems: 'center',
+  },
+  confirmedTitle: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    color: '#15803d',
+    marginBottom: 30,
+    textAlign: 'center',
+  },
+  confirmedCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    width: '100%',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
+    elevation: 8,
+    alignItems: 'center',
+  },
+  confirmedLabel: {
+    fontSize: 16,
+    color: '#6b7280',
+    marginBottom: 8,
+    fontWeight: '500',
+  },
+  confirmedValue: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#374151',
+    textAlign: 'center',
+  },
+  confirmedGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 30,
+  },
+  confirmedGridItem: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 15,
+    width: '48%', // Adjusted for two columns
+    marginBottom: 15,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  confirmedGridLabel: {
+    fontSize: 13,
+    color: '#6b7280',
+    marginTop: 8,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  confirmedGridValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#374151',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  weatherSummaryCard: {
+    backgroundColor: '#e0f2f7',
+    borderRadius: 20,
+    padding: 20,
+    width: '100%',
+    marginBottom: 30,
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  weatherSummaryTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#075985',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  weatherSummaryText: {
+    fontSize: 16,
+    color: '#075985',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  backToMapButton: {
+    backgroundColor: '#6b7280',
+    borderRadius: 16,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    shadowColor: '#6b7280',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  backToMapButtonText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
 });
