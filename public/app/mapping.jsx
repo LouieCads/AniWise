@@ -265,7 +265,7 @@ export default function Mapping() {
                 onPress: () => {
                   // Navigate to a new screen or update state to show confirmed details
                   router.push({
-                    pathname: '/confirmed-farm', // Assuming you have a route for confirmed farm details
+                    pathname: '/dashboar', // Assuming you have a route for confirmed farm details
                     params: {
                       farmAddress: currentSelectedAddress,
                       soilCondition: soilData.condition,
