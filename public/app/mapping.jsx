@@ -24,6 +24,106 @@ const { width, height } = Dimensions.get('window');
 // Move API key to environment variables or secure storage
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY || '98bb67c7b4f0e326ccdfebd2e15577f3';
 
+// Crop recommendation data structure
+const CROP_RECOMMENDATIONS = {
+  rice: {
+    name: 'Palay (Rice)',
+    tagalog: 'Palay',
+    scientificName: 'Oryza sativa',
+    icon: 'grass',
+    conditions: {
+      pH: { min: 5.5, max: 7.0, optimal: 6.5 },
+      moisture: ['High', 'Medium'],
+      temperature: { min: 20, max: 35, optimal: 28 },
+      soilType: ['Clay', 'Loam'],
+      season: ['Wet', 'Dry']
+    },
+    description: 'Main crop ng Pilipinas. Kailangan ng maraming tubig at mainit na panahon.',
+    benefits: ['High yield potential', 'Staple food', 'Good market demand'],
+    careTips: ['Regular irrigation', 'Fertilizer application', 'Pest management']
+  },
+  corn: {
+    name: 'Mais (Corn)',
+    tagalog: 'Mais',
+    scientificName: 'Zea mays',
+    icon: 'eco',
+    conditions: {
+      pH: { min: 5.8, max: 7.5, optimal: 6.5 },
+      moisture: ['Medium', 'Low'],
+      temperature: { min: 18, max: 32, optimal: 25 },
+      soilType: ['Loam', 'Sandy Loam'],
+      season: ['Wet', 'Dry']
+    },
+    description: 'Versatile crop na pwede sa iba\'t ibang soil conditions.',
+    benefits: ['Drought tolerant', 'Multiple uses', 'Good for rotation'],
+    careTips: ['Well-drained soil', 'Regular weeding', 'Proper spacing']
+  },
+  vegetables: {
+    name: 'Gulay (Vegetables)',
+    tagalog: 'Gulay',
+    scientificName: 'Various',
+    icon: 'local-florist',
+    conditions: {
+      pH: { min: 6.0, max: 7.5, optimal: 6.8 },
+      moisture: ['Medium'],
+      temperature: { min: 15, max: 30, optimal: 22 },
+      soilType: ['Loam', 'Sandy Loam'],
+      season: ['Cool', 'Wet']
+    },
+    description: 'Mga gulay tulad ng talong, kamatis, at iba pa.',
+    benefits: ['High value', 'Quick harvest', 'Nutritional'],
+    careTips: ['Organic matter', 'Regular watering', 'Pest control']
+  },
+  sugarcane: {
+    name: 'Tubo (Sugarcane)',
+    tagalog: 'Tubo',
+    scientificName: 'Saccharum officinarum',
+    icon: 'agriculture',
+    conditions: {
+      pH: { min: 5.5, max: 8.0, optimal: 6.5 },
+      moisture: ['High', 'Medium'],
+      temperature: { min: 20, max: 38, optimal: 30 },
+      soilType: ['Clay', 'Loam'],
+      season: ['Wet', 'Dry']
+    },
+    description: 'Crop para sa sugar production. Kailangan ng mainit at humid na panahon.',
+    benefits: ['High sugar content', 'Long-term crop', 'Industrial use'],
+    careTips: ['Heavy irrigation', 'Fertilizer needs', 'Harvest timing']
+  },
+  coconut: {
+    name: 'Niyog (Coconut)',
+    tagalog: 'Niyog',
+    scientificName: 'Cocos nucifera',
+    icon: 'palm-tree',
+    conditions: {
+      pH: { min: 5.0, max: 8.0, optimal: 6.5 },
+      moisture: ['High', 'Medium'],
+      temperature: { min: 20, max: 35, optimal: 28 },
+      soilType: ['Sandy', 'Loam'],
+      season: ['All year']
+    },
+    description: 'Tree crop na pwede sa coastal areas. Versatile at sustainable.',
+    benefits: ['Multiple products', 'Drought resistant', 'Long lifespan'],
+    careTips: ['Well-drained soil', 'Regular pruning', 'Pest monitoring']
+  },
+  coffee: {
+    name: 'Kape (Coffee)',
+    tagalog: 'Kape',
+    scientificName: 'Coffea spp.',
+    icon: 'local-cafe',
+    conditions: {
+      pH: { min: 5.5, max: 6.5, optimal: 6.0 },
+      moisture: ['Medium'],
+      temperature: { min: 15, max: 25, optimal: 20 },
+      soilType: ['Loam', 'Sandy Loam'],
+      season: ['Cool', 'Wet']
+    },
+    description: 'High-value crop para sa upland areas. Kailangan ng cool na panahon.',
+    benefits: ['High market value', 'Shade tolerant', 'Sustainable'],
+    careTips: ['Shade management', 'Pruning', 'Quality processing']
+  }
+};
+
 export default function Mapping() {
   const [farmLocation, setFarmLocation] = useState('');
   const [coordinates, setCoordinates] = useState({
@@ -41,8 +141,94 @@ export default function Mapping() {
   const [weatherData, setWeatherData] = useState(null);
   const [isLoadingSoil, setIsLoadingSoil] = useState(false);
   const [showSoilModal, setShowSoilModal] = useState(false);
+  const [showCropModal, setShowCropModal] = useState(false);
   const [placeSuggestions, setPlaceSuggestions] = useState([]); // State for place suggestions
   const [selectedFarmAddress, setSelectedFarmAddress] = useState(''); // Store the chosen farm address for post-confirm display
+  const [cropRecommendations, setCropRecommendations] = useState([]);
+
+  // Function to get crop recommendations based on soil conditions
+  const getCropRecommendations = useCallback((soilData) => {
+    if (!soilData) return [];
+
+    const recommendations = [];
+    const soilTemp = parseFloat(soilData.temperature);
+    const soilPH = parseFloat(soilData.pH);
+    const soilMoisture = soilData.moisture;
+
+    // Check each crop against soil conditions
+    Object.entries(CROP_RECOMMENDATIONS).forEach(([cropKey, crop]) => {
+      let score = 0;
+      let reasons = [];
+
+      // Check pH compatibility
+      if (soilPH >= crop.conditions.pH.min && soilPH <= crop.conditions.pH.max) {
+        score += 3;
+        reasons.push(`pH ${soilPH} ay suitable (${crop.conditions.pH.min}-${crop.conditions.pH.max})`);
+      } else {
+        reasons.push(`pH ${soilPH} ay hindi suitable (kailangan ${crop.conditions.pH.min}-${crop.conditions.pH.max})`);
+      }
+
+      // Check moisture compatibility
+      if (crop.conditions.moisture.includes(soilMoisture)) {
+        score += 2;
+        reasons.push(`Moisture level (${soilMoisture}) ay suitable`);
+      } else {
+        reasons.push(`Moisture level (${soilMoisture}) ay hindi suitable`);
+      }
+
+      // Check temperature compatibility
+      if (soilTemp >= crop.conditions.temperature.min && soilTemp <= crop.conditions.temperature.max) {
+        score += 3;
+        reasons.push(`Temperature ${soilTemp}°C ay suitable (${crop.conditions.temperature.min}-${crop.conditions.temperature.max}°C)`);
+      } else {
+        reasons.push(`Temperature ${soilTemp}°C ay hindi suitable (kailangan ${crop.conditions.temperature.min}-${crop.conditions.temperature.max}°C)`);
+      }
+
+      // Determine recommendation level
+      let recommendationLevel = 'Poor';
+      if (score >= 7) recommendationLevel = 'Excellent';
+      else if (score >= 5) recommendationLevel = 'Good';
+      else if (score >= 3) recommendationLevel = 'Fair';
+
+      recommendations.push({
+        ...crop,
+        key: cropKey,
+        score,
+        recommendationLevel,
+        reasons,
+        soilConditions: {
+          pH: soilPH,
+          moisture: soilMoisture,
+          temperature: soilTemp
+        }
+      });
+    });
+
+    // Sort by score (highest first) and filter out poor recommendations
+    return recommendations
+      .filter(rec => rec.recommendationLevel !== 'Poor')
+      .sort((a, b) => b.score - a.score);
+  }, []);
+
+  // Function to get recommendation level color
+  const getRecommendationColor = (level) => {
+    switch (level) {
+      case 'Excellent': return '#15803d';
+      case 'Good': return '#f59e0b';
+      case 'Fair': return '#dc2626';
+      default: return '#6b7280';
+    }
+  };
+
+  // Function to get recommendation level icon
+  const getRecommendationIcon = (level) => {
+    switch (level) {
+      case 'Excellent': return 'star';
+      case 'Good': return 'thumb-up';
+      case 'Fair': return 'warning';
+      default: return 'help';
+    }
+  };
 
   // Function to fetch soil conditions from OpenWeather API
   const fetchSoilConditions = useCallback(async (lat, lon, placeName = '') => {
@@ -63,7 +249,13 @@ export default function Mapping() {
 
       const soilConditions = calculateSoilConditions(weatherResult);
       // Add placeName to soilData, falling back to weatherResult.name if placeName is empty
-      setSoilData({ ...soilConditions, placeName: placeName || weatherResult.name || 'Unknown Place' }); 
+      const soilDataWithPlace = { ...soilConditions, placeName: placeName || weatherResult.name || 'Unknown Place' };
+      setSoilData(soilDataWithPlace);
+      
+      // Generate crop recommendations
+      const recommendations = getCropRecommendations(soilDataWithPlace);
+      setCropRecommendations(recommendations);
+      
       setShowSoilModal(true);
 
       try {
@@ -98,7 +290,7 @@ export default function Mapping() {
     } finally {
       setIsLoadingSoil(false);
     }
-  }, []); // Added fetchSoilConditions to useCallback dependencies
+  }, [getCropRecommendations]); // Added getCropRecommendations to useCallback dependencies
 
   // Function to calculate soil conditions based on weather data
   const calculateSoilConditions = (weather) => {
@@ -265,7 +457,7 @@ export default function Mapping() {
                 onPress: () => {
                   // Navigate to a new screen or update state to show confirmed details
                   router.push({
-                    pathname: '/confirmed-farm', // Assuming you have a route for confirmed farm details
+                    pathname: '/dashboard', // Assuming you have a route for confirmed farm details
                     params: {
                       farmAddress: currentSelectedAddress,
                       soilCondition: soilData.condition,
@@ -727,10 +919,144 @@ export default function Mapping() {
                   >
                     <Text style={styles.chooseFarmButtonText}>Piliin itong Farm</Text>
                   </TouchableOpacity>
+
+                  {/* Crop Recommendations Button */}
+                  <TouchableOpacity
+                    style={styles.cropRecommendationsButton}
+                    onPress={() => {
+                      setShowSoilModal(false);
+                      setShowCropModal(true);
+                    }}
+                  >
+                    <Text style={styles.cropRecommendationsButtonText}>Mga Rekomendasyon</Text>
+                  </TouchableOpacity>
                 </>
               ) : (
                 <Text style={styles.noDataText}>Walang available na soil data.</Text>
               )}
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* Crop Recommendations Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showCropModal}
+        onRequestClose={() => setShowCropModal(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setShowCropModal(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.cropModalContent}>
+              <TouchableOpacity style={styles.closeModalButton} onPress={() => setShowCropModal(false)}>
+                <Icon name="close" size={24} color="#6b7280" />
+              </TouchableOpacity>
+
+              <View style={styles.cropHeader}>
+                <Icon name="agriculture" size={28} color="#15803d" />
+                <Text style={styles.cropModalTitle}>Crop Recommendations</Text>
+              </View>
+
+              {soilData?.placeName && (
+                <Text style={styles.cropModalPlaceName}>{soilData.placeName}</Text>
+              )}
+
+              {cropRecommendations.length > 0 ? (
+                <ScrollView style={styles.cropRecommendationsList} showsVerticalScrollIndicator={false}>
+                  {cropRecommendations.map((crop, index) => (
+                    <TouchableOpacity key={crop.key} style={styles.cropListItem}>
+                      <View style={styles.cropListHeader}>
+                        <View style={styles.cropListIconContainer}>
+                          <Icon name={crop.icon} size={28} color="#15803d" />
+                        </View>
+                        <View style={styles.cropListInfo}>
+                          <Text style={styles.cropListName}>{crop.name}</Text>
+                          <Text style={styles.cropListTagalog}>{crop.tagalog}</Text>
+                          <Text style={styles.cropListScientific}>{crop.scientificName}</Text>
+                        </View>
+                        <View style={[styles.recommendationBadge, { backgroundColor: getRecommendationColor(crop.recommendationLevel) + '20' }]}>
+                          <Icon 
+                            name={getRecommendationIcon(crop.recommendationLevel)} 
+                            size={16} 
+                            color={getRecommendationColor(crop.recommendationLevel)} 
+                          />
+                          <Text style={[styles.recommendationText, { color: getRecommendationColor(crop.recommendationLevel) }]}>
+                            {crop.recommendationLevel}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <Text style={styles.cropListDescription}>{crop.description}</Text>
+
+                      <View style={styles.cropListDetails}>
+                        <View style={styles.cropListDetailRow}>
+                          <View style={styles.cropListDetailItem}>
+                            <Icon name="star" size={14} color="#f59e0b" />
+                            <Text style={styles.cropListDetailLabel}>Score:</Text>
+                            <Text style={styles.cropListDetailValue}>{crop.score}/8</Text>
+                          </View>
+                          <View style={styles.cropListDetailItem}>
+                            <Icon name="science" size={14} color="#8b5cf6" />
+                            <Text style={styles.cropListDetailLabel}>pH:</Text>
+                            <Text style={styles.cropListDetailValue}>{crop.conditions.pH.min}-{crop.conditions.pH.max}</Text>
+                          </View>
+                          <View style={styles.cropListDetailItem}>
+                            <Icon name="thermostat" size={14} color="#dc2626" />
+                            <Text style={styles.cropListDetailLabel}>Temp:</Text>
+                            <Text style={styles.cropListDetailValue}>{crop.conditions.temperature.min}-{crop.conditions.temperature.max}°C</Text>
+                          </View>
+                        </View>
+                      </View>
+
+                      <View style={styles.cropListBenefits}>
+                        <Text style={styles.cropListBenefitsTitle}>Mga Benepisyo:</Text>
+                        <View style={styles.cropListBenefitsGrid}>
+                          {crop.benefits.slice(0, 3).map((benefit, idx) => (
+                            <View key={idx} style={styles.cropListBenefitItem}>
+                              <Icon name="check-circle" size={12} color="#15803d" />
+                              <Text style={styles.cropListBenefitText}>{benefit}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      </View>
+
+                      <View style={styles.cropListCareTips}>
+                        <Text style={styles.cropListCareTipsTitle}>Mga Tips:</Text>
+                        <View style={styles.cropListCareTipsGrid}>
+                          {crop.careTips.slice(0, 2).map((tip, idx) => (
+                            <View key={idx} style={styles.cropListCareTipItem}>
+                              <Icon name="lightbulb" size={12} color="#f59e0b" />
+                              <Text style={styles.cropListCareTipText}>{tip}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              ) : (
+                <View style={styles.noRecommendationsContainer}>
+                  <Icon name="agriculture" size={48} color="#9ca3af" />
+                  <Text style={styles.noRecommendationsText}>
+                    Walang suitable na crops sa kasalukuyang soil conditions.
+                  </Text>
+                  <Text style={styles.noRecommendationsSubtext}>
+                    Subukan ang ibang lokasyon o i-improve ang soil conditions.
+                  </Text>
+                </View>
+              )}
+
+              <TouchableOpacity
+                style={styles.backToSoilButton}
+                onPress={() => {
+                  setShowCropModal(false);
+                  setShowSoilModal(true);
+                }}
+              >
+                <Icon name="arrow-back" size={20} color="#ffffff" style={styles.confirmIcon} />
+                <Text style={styles.backToSoilButtonText}>Bumalik sa Soil Data</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </TouchableWithoutFeedback>
@@ -1087,7 +1413,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12, // Reduced padding
     width: '100%',
-    marginBottom: 32, // Reduced margin
+    marginBottom: 12, // Reduced margin
     borderWidth: 1,
     borderColor: '#bae6fd',
     alignItems: 'center',
@@ -1106,8 +1432,237 @@ const styles = StyleSheet.create({
   chooseFarmButton: {
     backgroundColor: '#87BE42',
     borderRadius: 12,
-    paddingVertical: 12, // Reduced padding
-    paddingHorizontal: 15, // Reduced padding
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    shadowColor: '#6b7280',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  chooseFarmButtonText: {
+    color: '#ffffff',
+    fontSize: 15, // Slightly smaller font size
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  cropRecommendationsButton: {
+    backgroundColor: '#87BE42',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    marginTop: 8,
+    shadowColor: '#6b7280',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  cropRecommendationsButtonText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  cropModalContent: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    width: '90%',
+    maxHeight: '85%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 15,
+  },
+  cropHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  cropModalTitle: {
+    fontSize: 21,
+    fontWeight: 'bold',
+    color: '#15803d',
+    marginLeft: 10,
+  },
+  cropModalPlaceName: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  cropRecommendationsList: {
+    width: '100%',
+    maxHeight: 400,
+    marginBottom: 15,
+  },
+  cropListItem: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 15,
+    width: '100%',
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cropListHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  cropListIconContainer: {
+    backgroundColor: '#e0f2f7',
+    borderRadius: 8,
+    padding: 8,
+    marginRight: 12,
+  },
+  cropListInfo: {
+    flex: 1,
+  },
+  cropListName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#374151',
+    marginBottom: 2,
+  },
+  cropListTagalog: {
+    fontSize: 12,
+    color: '#6b7280',
+    fontStyle: 'italic',
+  },
+  cropListScientific: {
+    fontSize: 10,
+    color: '#9ca3af',
+    fontStyle: 'italic',
+  },
+  cropListDescription: {
+    fontSize: 13,
+    color: '#6b7280',
+    marginBottom: 10,
+    lineHeight: 18,
+  },
+  cropListDetails: {
+    marginBottom: 10,
+    backgroundColor: '#f8fafc',
+    borderRadius: 8,
+    padding: 8,
+  },
+  cropListDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  cropListDetailItem: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  cropListDetailLabel: {
+    fontSize: 10,
+    color: '#6b7280',
+    marginLeft: 4,
+    marginRight: 2,
+  },
+  cropListDetailValue: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#374151',
+  },
+  cropListBenefits: {
+    marginBottom: 10,
+  },
+  cropListBenefitsTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#374151',
+    marginBottom: 4,
+  },
+  cropListBenefitsGrid: {
+    flexDirection: 'column',
+  },
+  cropListBenefitItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  cropListBenefitText: {
+    fontSize: 11,
+    color: '#6b7280',
+    marginLeft: 4,
+    flex: 1,
+  },
+  cropListCareTips: {
+    marginBottom: 8,
+  },
+  cropListCareTipsTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#374151',
+    marginBottom: 4,
+  },
+  cropListCareTipsGrid: {
+    flexDirection: 'column',
+  },
+  cropListCareTipItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  cropListCareTipText: {
+    fontSize: 11,
+    color: '#6b7280',
+    marginLeft: 4,
+    flex: 1,
+  },
+  recommendationBadge: {
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  recommendationText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
+  noRecommendationsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noRecommendationsText: {
+    fontSize: 16,
+    color: '#6b7280',
+    marginBottom: 10,
+  },
+  noRecommendationsSubtext: {
+    fontSize: 14,
+    color: '#6b7280',
+    textAlign: 'center',
+  },
+  backToSoilButton: {
+    backgroundColor: '#87BE42',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1118,9 +1673,9 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 8,
   },
-  chooseFarmButtonText: {
+  backToSoilButtonText: {
     color: '#ffffff',
-    fontSize: 15, // Slightly smaller font size
+    fontSize: 15,
     fontWeight: 'bold',
     marginLeft: 8,
   },
