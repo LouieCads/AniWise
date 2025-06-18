@@ -34,7 +34,7 @@ const Calendar = () => {
   };
 
   const navigateToAlerts = () => {
-    router.push('/alerts');
+    router.push('/journal');
   };
 
   const handlePreviousMonth = () => {

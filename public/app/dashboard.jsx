@@ -18,12 +18,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [credibilityScore, setCredibilityScore] = useState(10); // Example score
+  const [credibilityScore, setCredibilityScore] = useState(50); // Example score
   const [loanProgress, setLoanProgress] = useState({
     totalAmount: 50000,
     paidAmount: 32000,
     remainingAmount: 18000,
-    progressPercentage: 64,
+    progressPercentage: 50,
     nextPaymentDate: 'May 15, 2025',
     monthlyPayment: 5000
   });
@@ -105,16 +105,17 @@ const Dashboard = () => {
     );
   };
 
-  const getCredibilityColor = (score) => {
-    if (score >= 75) return ['#10b981', '#059669', '#047857']; // Green
-    if (score >= 50) return ['#f59e0b', '#d97706', '#b45309']; // Orange
-    return ['#ef4444', '#dc2626', '#b91c1c']; // Red
+  // Updated to use only 3 categories
+  const getCredibilityStatus = (score) => {
+    if (score >= 67) return 'Good';
+    if (score >= 34) return 'Fair';
+    return 'Poor';
   };
 
-  const getCredibilityStatus = (score) => {
-    if (score >= 75) return 'Excellent';
-    if (score >= 50) return 'Good';
-    return 'Needs Improvement';
+  const getMeterColor = (score) => {
+    if (score >= 67) return '#10b981'; // Green
+    if (score >= 34) return '#f59e0b'; // Orange
+    return '#ef4444'; // Red
   };
 
   return (
@@ -190,18 +191,15 @@ const Dashboard = () => {
           </LinearGradient>
         </View>
 
-        {/* Credibility Score Card */}
-        <LinearGradient
-          colors={getCredibilityColor(credibilityScore)}
-          style={styles.credibilityCard}
-        >
+        {/* Credibility Score Card with Meter */}
+        <View style={styles.credibilityCard}>
           <View style={styles.credibilityHeader}>
             <View style={styles.credibilityTitleContainer}>
-              <Icon name="verified-user" size={24} color="#ffffff" />
+              <Icon name="verified-user" size={24} color="#10b981" />
               <Text style={styles.credibilityTitle}>Credibility Score</Text>
             </View>
             <TouchableOpacity style={styles.infoButton}>
-              <Icon name="info-outline" size={20} color="#ffffff" />
+              <Icon name="info-outline" size={20} color="#64748b" />
             </TouchableOpacity>
           </View>
           
@@ -212,28 +210,48 @@ const Dashboard = () => {
             </View>
             <Text style={styles.scoreStatus}>{getCredibilityStatus(credibilityScore)}</Text>
             
-            {/* Circular Progress */}
-            <View style={styles.circularProgress}>
-              <View style={styles.progressCircle}>
-                <View style={[styles.progressFill, { 
-                  transform: [{ rotate: `${(credibilityScore / 100) * 360}deg` }] 
-                }]} />
-                <View style={styles.progressCenter} />
+            {/* Credit Score Meter - Updated for 3 sections */}
+            <View style={styles.meterContainer}>
+              <View style={styles.meterTrack}>
+                {/* Poor Section (0-33) */}
+                <View style={[styles.meterSection, { backgroundColor: '#fee2e2' }]} />
+                {/* Fair Section (34-66) */}
+                <View style={[styles.meterSection, { backgroundColor: '#fed7aa' }]} />
+                {/* Good Section (67-100) */}
+                <View style={[styles.meterSection, { backgroundColor: '#d1fae5' }]} />
+              </View>
+              
+              {/* Score Indicator */}
+              <View 
+                style={[
+                  styles.scoreIndicator, 
+                  { 
+                    left: `${(credibilityScore / 100) * 100}%`,
+                    backgroundColor: getMeterColor(credibilityScore)
+                  }
+                ]} 
+              />
+              
+              {/* Meter Labels - Updated for 3 labels */}
+              <View style={styles.meterLabels}>
+                <Text style={styles.meterLabel}>Poor</Text>
+                <Text style={styles.meterLabel}>Fair</Text>
+                <Text style={styles.meterLabel}>Good</Text>
               </View>
             </View>
           </View>
           
           <View style={styles.credibilityFooter}>
             <View style={styles.credibilityMetric}>
-              <Icon name="payment" size={16} color="rgba(255,255,255,0.8)" />
+              <Icon name="payment" size={16} color="#64748b" />
               <Text style={styles.metricText}>Payment History</Text>
             </View>
             <View style={styles.credibilityMetric}>
-              <Icon name="account-balance" size={16} color="rgba(255,255,255,0.8)" />
+              <Icon name="account-balance" size={16} color="#64748b" />
               <Text style={styles.metricText}>Credit Usage</Text>
             </View>
           </View>
-        </LinearGradient>
+        </View>
 
         {/* Loan Progress Card */}
         <View style={styles.loanCard}>
@@ -307,7 +325,6 @@ const Dashboard = () => {
             <Text style={styles.soilInfoLastUpdated}>Last Updated: {soilInfo.lastUpdated}</Text>
           </View>
         </View>
-
 
         {/* Bottom Navigation */}
         <View style={styles.bottomSpacer} />
@@ -494,11 +511,12 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderBottomLeftRadius: 20,
   },
-  // Credibility Score Styles
+  // Updated Credibility Score Styles with 3-section Meter
   credibilityCard: {
     margin: 20,
     borderRadius: 24,
     padding: 24,
+    backgroundColor: '#ffffff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
@@ -518,14 +536,14 @@ const styles = StyleSheet.create({
   credibilityTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#0f172a',
     marginLeft: 8,
   },
   infoButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: '#f1f5f9',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -541,58 +559,75 @@ const styles = StyleSheet.create({
   scoreNumber: {
     fontSize: 48,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#0f172a',
   },
   scoreOutOf: {
     fontSize: 24,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: '#64748b',
     marginLeft: 4,
   },
   scoreStatus: {
     fontSize: 16,
-    color: '#ffffff',
+    color: '#64748b',
     fontWeight: '600',
+    marginBottom: 24,
+  },
+  // Credit Score Meter Styles - Updated for 3 sections
+  meterContainer: {
+    width: '100%',
+    maxWidth: 280,
+    position: 'relative',
     marginBottom: 16,
   },
-  circularProgress: {
-    width: 80,
-    height: 80,
-  },
-  progressCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    position: 'relative',
+  meterTrack: {
+    flexDirection: 'row',
+    height: 12,
+    borderRadius: 6,
     overflow: 'hidden',
+    marginBottom: 8,
   },
-  progressFill: {
-    position: 'absolute',
-    width: 40,
-    height: 80,
-    backgroundColor: '#ffffff',
-    right: 0,
-    transformOrigin: '0 40px',
+  meterSection: {
+    flex: 1,
+    height: '100%',
   },
-  progressCenter: {
+  scoreIndicator: {
     position: 'absolute',
-    top: 10,
-    left: 10,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    top: -4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    marginLeft: -10,
+    borderWidth: 3,
+    borderColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  meterLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+  },
+  meterLabel: {
+    fontSize: 10,
+    color: '#64748b',
+    fontWeight: '500',
   },
   credibilityFooter: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
   },
   credibilityMetric: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   metricText: {
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: '#64748b',
     fontSize: 12,
     marginLeft: 4,
   },
