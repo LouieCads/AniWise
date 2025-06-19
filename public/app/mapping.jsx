@@ -665,9 +665,9 @@ export default function Mapping() {
   // Function to get API URL based on environment
   const getApiUrl = () => {
     if (__DEV__) {
-      return 'http://192.168.254.169:3000'; // Local development server
+      return 'http://192.168.100.2:3000'; // Local development server
     } else {
-      return 'https://192.168.254.169:3000'; // Production server
+      return 'https://192.168.100.2:3000'; // Production server
     }
   };
 
@@ -1055,14 +1055,14 @@ export default function Mapping() {
                     )}
                   </View>
 
-                  <View style={styles.weatherInfoModal}>
+                  {/* <View style={styles.weatherInfoModal}>
                     <Text style={styles.weatherDescriptionModal}>
                       Kasalukuyang Panahon: {soilData.description} • <Text style={{ color: getTemperatureIndicator(parseFloat(soilData.airTemp)).color }}>{soilData.airTemp}°C ({getTemperatureIndicator(parseFloat(soilData.airTemp)).text})</Text> • {soilData.humidity}% humidity
                     </Text>
                     <Text style={styles.weatherDescriptionModal}>
                       Lakas ng Hangin: {soilData.windSpeed} m/s • Presyon: {soilData.pressure} hPa
                     </Text>
-                  </View>
+                  </View> */}
 
                   {/* "Choose this Farm" Button */}
                   <TouchableOpacity

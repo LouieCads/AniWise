@@ -92,13 +92,13 @@ const Dashboard = () => {
           return;
         }
         // Fetch user profile (for greeting)
-        const profileRes = await fetch('http://192.168.254.169:3000/api/profile', {
+        const profileRes = await fetch('http://192.168.100.2:3000/api/profile', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const profileData = await profileRes.json();
         if (profileData.success) setUser(profileData.user);
         // Fetch user's farms
-        const farmRes = await fetch('http://192.168.254.169:3000/api/farms/my', {
+        const farmRes = await fetch('http://192.168.100.2:3000/api/farms/my', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const farmData = await farmRes.json();

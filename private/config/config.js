@@ -1,6 +1,6 @@
 module.exports = {
   PORT: process.env.PORT || 3000,
-  JWT_SECRET: process.env.JWT_SECRET,
+  JWT_SECRET: process.env.JWT_SECRET || "your-secret-key-change-this-in-production",
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "24h",
   SALT_ROUNDS: parseInt(process.env.SALT_ROUNDS || "10"),
   TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,

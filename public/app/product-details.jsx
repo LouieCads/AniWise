@@ -11,15 +11,18 @@ import {
   Modal,
   TextInput,
   Alert,
+  Dimensions,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+const { width } = Dimensions.get('window');
+
 const ProductDetailsPage = ({ route }) => {
   // Modal state
   const [isLoanModalVisible, setIsLoanModalVisible] = useState(false);
+  const [selectedSize, setSelectedSize] = useState('1 KG');
   const [loanFormData, setLoanFormData] = useState({
     pangalan: '',
     contactNumber: '',
@@ -30,25 +33,25 @@ const ProductDetailsPage = ({ route }) => {
     dahilan: '',
   });
 
-  // You can get product data from route params
-  // const { productId, productName } = route?.params || {};
-  
-  // For now, using static data - you can make this dynamic based on the selected product
+  // Product data
   const productData = {
     id: 1,
-    name: 'Binhi ng palay',
-    image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=300&fit=crop&auto=format',
-    description: 'Ang binhi ng palay ay de-kalidad na butil na ginagamit para sa pagtatanim ng masaganang ani ng bigas. Sa paggamit ng maaasahang binhi, nakatutulong ito sa pagpapaunlad ng kabuhayan ng mga magsasaka at sa pagtugon sa pangangailangan ng pagkain sa bawat tahanan.',
-    price: 50.00,
-    priceUnit: 'KG',
-    bulkPrice: 100.00,
-    bulkUnit: 'KG',
-    bulkLabel: 'Benta ng palay ngayon'
+    name: 'Buto ng Palay',
+    category: 'Pananim',
+    images: [
+      'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=300&fit=crop&auto=format',
+      'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&h=300&fit=crop&auto=format',
+      'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=400&h=300&fit=crop&auto=format',
+      'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=300&fit=crop&auto=format',
+    ],
+    description: 'Ang buto ng palay ay de-kalidad na butil na ginagamit para sa pagtatanim ng masaganang ani ng bigas. Nakakatulong ito sa pagpapaunlad ng kabuhayan ng mga magsasaka at sa pagtugon sa pangangailangan ng pagkain.',
+    price: 500.00,
+    sizes: ['500g', '1 KG', '2 KG', '5 KG', '10 KG', '25 KG'],
   };
 
   const handleAddToCart = () => {
-    // Add to cart logic here
-    console.log('Added to cart:', productData.name);
+    console.log('Added to cart:', productData.name, 'Size:', selectedSize);
+    Alert.alert('Idinagdag sa Cart', `${productData.name} (${selectedSize}) ay matagumpay na naidagdag sa inyong cart.`);
   };
 
   const handleLoan = () => {
@@ -57,7 +60,6 @@ const ProductDetailsPage = ({ route }) => {
 
   const handleCloseLoanModal = () => {
     setIsLoanModalVisible(false);
-    // Reset form data
     setLoanFormData({
       pangalan: '',
       contactNumber: '',
@@ -69,16 +71,15 @@ const ProductDetailsPage = ({ route }) => {
     });
   };
 
-  // Utility to get API URL (reuse from mapping.jsx)
+  // Utility functions
   const getApiUrl = () => {
     if (__DEV__) {
-      return 'http://192.168.254.169:3000';
+      return 'http://192.168.100.2:3000';
     } else {
-      return 'https://192.168.254.169:3000';
+      return 'https://192.168.100.2:3000';
     }
   };
 
-  // Utility to get auth token (reuse from mapping.jsx)
   const getAuthToken = async () => {
     try {
       const token = await AsyncStorage.getItem('authToken');
@@ -91,7 +92,6 @@ const ProductDetailsPage = ({ route }) => {
   };
 
   const handleSubmitLoan = async () => {
-    // Validate required fields
     if (!loanFormData.pangalan || !loanFormData.contactNumber || !loanFormData.address) {
       Alert.alert('Error', 'Pakiompleto ang lahat ng kinakailangang impormasyon.');
       return;
@@ -109,7 +109,7 @@ const ProductDetailsPage = ({ route }) => {
       });
       const data = await response.json();
       if (!response.ok || !data.success) {
-        Alert.alert('Error', data.message || 'Loan application failed.');
+        Alert.alert('Error', data.message || 'Nabigo ang loan application.');
         return;
       }
       Alert.alert(
@@ -118,13 +118,15 @@ const ProductDetailsPage = ({ route }) => {
         [
           {
             text: 'OK',
-            onPress: () => handleCloseLoanModal(),
+            onPress: () => {
+              handleCloseLoanModal();
+            },
           },
         ]
       );
     } catch (error) {
       console.error('Loan application error:', error);
-      Alert.alert('Error', 'Network error. Make sure the server is running.');
+      Alert.alert('Error', 'May problema sa koneksyon. Pakitiyak na gumagana ang server.');
     }
   };
 
@@ -133,11 +135,6 @@ const ProductDetailsPage = ({ route }) => {
       ...prev,
       [field]: value
     }));
-  };
-
-  const handleHowToPlant = () => {
-    // Navigate to planting guide
-    console.log('How to plant:', productData.name);
   };
 
   // Fetch user profile and autofill form fields
@@ -166,83 +163,95 @@ const ProductDetailsPage = ({ route }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f1f5f9" />
-      
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
+        <TouchableOpacity
+          style={styles.headerButton}
           onPress={() => router.back()}
         >
-          <Icon name="chevron-left" size={24} color="#ffffff" />
+          <Icon name="chevron-left" size={24} color="#fff" />
         </TouchableOpacity>
-        
-        <Text style={styles.headerTitle}>Detalye</Text>
-        
-        <TouchableOpacity style={styles.cartButton}>
-          <Icon name="shopping-bag" size={24} color="#ffffff" />
+
+        <TouchableOpacity style={styles.headerButton}>
+          <Icon name="shopping-bag" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
 
-      <ScrollView 
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Product Image */}
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Product Images */}
         <View style={styles.imageContainer}>
           <Image
-            source={{ uri: productData.image }}
-            style={styles.productImage}
+            source={{ uri: productData.images[0] }}
+            style={styles.mainImage}
             resizeMode="cover"
           />
+          
+          {/* Thumbnail Images */}
+          <View style={styles.thumbnailContainer}>
+            {productData.images.map((image, index) => (
+              <TouchableOpacity key={index} style={styles.thumbnailWrapper}>
+                <Image
+                  source={{ uri: image }}
+                  style={styles.thumbnail}
+                  resizeMode="cover"
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         {/* Product Info */}
         <View style={styles.productInfo}>
+          <Text style={styles.category}>{productData.category}</Text>
           <Text style={styles.productName}>{productData.name}</Text>
-          
-          <Text style={styles.productDescription}>
-            {productData.description}
-          </Text>
+          <Text style={styles.price}>₱{productData.price.toFixed(0)}</Text>
 
-          {/* Price Section */}
-          <View style={styles.priceContainer}>
-            <Text style={styles.priceLabel}>PHP {productData.price.toFixed(2)} / {productData.priceUnit}</Text>
+          {/* Available Sizes */}
+          <Text style={styles.sectionTitle}>Bilang</Text>
+          <View style={styles.sizesContainer}>
+            {productData.sizes.map((size, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.sizeButton,
+                  selectedSize === size && styles.selectedSizeButton
+                ]}
+                onPress={() => setSelectedSize(size)}
+              >
+                <Text style={[
+                  styles.sizeText,
+                  selectedSize === size && styles.selectedSizeText
+                ]}>
+                  {size}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
 
-          {/* Bulk Price Button */}
-          <TouchableOpacity style={styles.bulkPriceButton}>
-            <Text style={styles.bulkPriceText}>{productData.bulkLabel}</Text>
-          </TouchableOpacity>
-          
-          <Text style={styles.bulkPrice}>PHP {productData.bulkPrice.toFixed(2)} / {productData.bulkUnit}</Text>
-
-          {/* How to Plant Link */}
-          <TouchableOpacity onPress={handleHowToPlant} style={styles.plantingGuideContainer}>
-            <Text style={styles.plantingGuideText}>
-              Paano magtanim ng <Text style={styles.plantingGuideLink}>palay?</Text>
-            </Text>
-          </TouchableOpacity>
+          {/* Description */}
+          <Text style={styles.sectionTitle}>Description</Text>
+          <Text style={styles.description}>{productData.description}</Text>
         </View>
 
-        {/* Bottom Spacer */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
       {/* Fixed Bottom Actions */}
       <View style={styles.bottomActions}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.addToCartButton}
           onPress={handleAddToCart}
         >
-          <Text style={styles.addToCartText}>Idagdag sa Cart</Text>
+          <Icon name="shopping-cart" size={20} color="#666" />
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.loanButton}
+
+        <TouchableOpacity
+          style={styles.buyButton}
           onPress={handleLoan}
         >
-          <Text style={styles.loanText}>I-Loan</Text>
+          <Text style={styles.buyButtonText}>I-Loan Ngayon</Text>
         </TouchableOpacity>
       </View>
 
@@ -258,21 +267,20 @@ const ProductDetailsPage = ({ route }) => {
             <TouchableOpacity onPress={handleCloseLoanModal}>
               <Icon name="close" size={24} color="#374151" />
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Loan Application</Text>
+            <Text style={styles.modalTitle}>Aplikasyon sa Loan</Text>
             <View style={{ width: 24 }} />
           </View>
 
           <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
             <Text style={styles.modalSubtitle}>
-              Para sa {productData.name}
+              Para sa {productData.name} ({selectedSize})
             </Text>
 
             <View style={styles.formContainer}>
-              {/* Full Name */}
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Pangalan *</Text>
                 <TextInput
-                  style={styles.textInput}
+                  style={[styles.textInput, styles.disabledInput]}
                   value={loanFormData.pangalan}
                   onChangeText={(value) => updateFormData('pangalan', value)}
                   placeholder="Ilagay ang buong pangalan"
@@ -281,11 +289,10 @@ const ProductDetailsPage = ({ route }) => {
                 />
               </View>
 
-              {/* Contact Number */}
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Contact Number *</Text>
                 <TextInput
-                  style={styles.textInput}
+                  style={[styles.textInput, styles.disabledInput]}
                   value={loanFormData.contactNumber}
                   onChangeText={(value) => updateFormData('contactNumber', value)}
                   placeholder="09XXXXXXXXX"
@@ -296,11 +303,10 @@ const ProductDetailsPage = ({ route }) => {
                 />
               </View>
 
-              {/* Address */}
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Address *</Text>
                 <TextInput
-                  style={[styles.textInput, styles.textArea]}
+                  style={[styles.textInput, styles.textArea, styles.disabledInput]}
                   value={loanFormData.address}
                   onChangeText={(value) => updateFormData('address', value)}
                   placeholder="Ilagay ang kumpletong address"
@@ -311,7 +317,6 @@ const ProductDetailsPage = ({ route }) => {
                 />
               </View>
 
-              {/* Age */}
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Edad</Text>
                 <TextInput
@@ -324,7 +329,6 @@ const ProductDetailsPage = ({ route }) => {
                 />
               </View>
 
-              {/* Occupation */}
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Trabaho</Text>
                 <TextInput
@@ -336,7 +340,6 @@ const ProductDetailsPage = ({ route }) => {
                 />
               </View>
 
-              {/* Monthly Income */}
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Buwanang Kita</Text>
                 <TextInput
@@ -349,7 +352,6 @@ const ProductDetailsPage = ({ route }) => {
                 />
               </View>
 
-              {/* Reason for Loan */}
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Dahilan ng Pag-loan</Text>
                 <TextInput
@@ -370,18 +372,18 @@ const ProductDetailsPage = ({ route }) => {
           </ScrollView>
 
           <View style={styles.modalFooter}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.cancelButton}
               onPress={handleCloseLoanModal}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={styles.cancelButtonText}>Kanselahin</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.submitButton}
               onPress={handleSubmitLoan}
             >
-              <Text style={styles.submitButtonText}>I-submit</Text>
+              <Text style={styles.submitButtonText}>Isumite</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -393,35 +395,17 @@ const ProductDetailsPage = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#ffffff',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
+    paddingTop: 10,
+    paddingBottom: 10,
   },
-  backButton: {
-    width: 48,
-    height: 48,
-    backgroundColor: '#87BE42',
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#0f172a',
-  },
-  cartButton: {
+  headerButton: {
     width: 48,
     height: 48,
     backgroundColor: '#87BE42',
@@ -438,145 +422,127 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   imageContainer: {
-    backgroundColor: '#ffffff',
-    marginHorizontal: 20,
-    marginBottom: 24,
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
+    paddingHorizontal: 20,
+    paddingTop: 20,
   },
-  productImage: {
+  mainImage: {
     width: '100%',
-    height: 200,
-    borderRadius: 16,
+    height: 300,
+    borderRadius: 0,
+    marginBottom: 20,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+  },
+  thumbnailContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 30,
+  },
+  thumbnailWrapper: {
+    width: (width - 60) / 4,
+    height: 80,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#f5f5f5',
+  },
+  thumbnail: {
+    width: '100%',
+    height: '100%',
   },
   productInfo: {
     paddingHorizontal: 20,
   },
+  category: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 5,
+  },
   productName: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#15803d',
-    textAlign: 'center',
-    marginBottom: 16,
+    color: '#000',
+    marginBottom: 10,
   },
-  productDescription: {
-    fontSize: 14,
-    color: '#87BE42',
-    lineHeight: 22,
-    textAlign: 'center',
-    marginBottom: 32,
-    paddingHorizontal: 8,
-  },
-  priceContainer: {
-    borderWidth: 2,
-    borderColor: '#87BE42',
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    marginBottom: 16,
-    backgroundColor: '#ffffff',
-  },
-  priceLabel: {
-    fontSize: 18,
+  price: {
+    fontSize: 40,
     fontWeight: 'bold',
-    color: '#15803d',
-    textAlign: 'center',
+    color: '#000',
+    marginBottom: 30,
   },
-  bulkPriceButton: {
-    backgroundColor: '#87BE42',
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  bulkPriceText: {
+  sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#ffffff',
-    textAlign: 'center',
+    color: '#000',
+    marginBottom: 15,
   },
-  bulkPrice: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#15803d',
-    textAlign: 'center',
-    marginBottom: 32,
+  sizesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 30,
+    gap: 10,
   },
-  plantingGuideContainer: {
+  sizeButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#15803d',
+    borderRadius: 8,
+    minWidth: 80,
     alignItems: 'center',
+  },
+  selectedSizeButton: {
+    backgroundColor: '#15803d',
+  },
+  sizeText: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '500',
+  },
+  selectedSizeText: {
+    color: '#fff',
+  },
+  description: {
+    fontSize: 16,
+    color: '#666',
+    lineHeight: 24,
     marginBottom: 20,
   },
-  plantingGuideText: {
-    fontSize: 16,
-    color: '#374151',
-    textAlign: 'center',
-  },
-  plantingGuideLink: {
-    color: '#15803d',
-    fontWeight: 'bold',
-    textDecorationLine: 'underline',
-  },
   bottomSpacer: {
-    height: 120,
+    height: 100,
   },
   bottomActions: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     flexDirection: 'row',
     paddingHorizontal: 20,
-    paddingBottom: 20,
-    paddingTop: 16,
-    backgroundColor: '#f1f5f9',
-    gap: 12,
+    paddingVertical: 20,
+    backgroundColor: '#ffffff',
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    gap: 15,
   },
   addToCartButton: {
-    flex: 1,
-    borderWidth: 2,
-    borderColor: '#87BE42',
-    borderRadius: 16,
-    paddingVertical: 16,
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 4,
+    width: 50,
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
   },
-  addToCartText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#15803d',
-    textAlign: 'center',
-  },
-  loanButton: {
+  buyButton: {
     flex: 1,
     backgroundColor: '#87BE42',
-    borderRadius: 16,
-    paddingVertical: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    borderRadius: 25,
+    paddingVertical: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  loanText: {
+  buyButtonText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-    color: '#ffffff',
-    textAlign: 'center',
   },
+
   // Modal Styles
   modalContainer: {
     flex: 1,
@@ -621,13 +587,17 @@ const styles = StyleSheet.create({
   },
   textInput: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 12,
+    borderColor: '#ddd',
+    borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
     color: '#374151',
     backgroundColor: '#ffffff',
+  },
+  disabledInput: {
+    backgroundColor: '#f9f9f9',
+    color: '#999',
   },
   textArea: {
     height: 80,
@@ -651,21 +621,21 @@ const styles = StyleSheet.create({
   cancelButton: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 12,
+    borderColor: '#ddd',
+    borderRadius: 8,
     paddingVertical: 12,
     backgroundColor: '#ffffff',
   },
   cancelButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#6b7280',
+    color: '#666',
     textAlign: 'center',
   },
   submitButton: {
     flex: 1,
     backgroundColor: '#87BE42',
-    borderRadius: 12,
+    borderRadius: 8,
     paddingVertical: 12,
   },
   submitButtonText: {
