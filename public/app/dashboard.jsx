@@ -36,6 +36,17 @@ const Dashboard = () => {
     lastUpdated: 'June 17, 2025, 10:00 AM' // Static date, adjust as needed
   });
 
+  // Redirect to sign-in if not authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = await AsyncStorage.getItem('authToken');
+      if (!token) {
+        router.replace('/sign-in');
+      }
+    };
+    checkAuth();
+  }, []);
+
   useEffect(() => {
     fetchUserProfile();
     // You can add API calls here to fetch credibility score and loan data
@@ -44,10 +55,9 @@ const Dashboard = () => {
 
   const fetchUserProfile = async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = await AsyncStorage.getItem('authToken');
       if (!token) {
         console.log('No token found, redirecting to sign in');
-        router.replace('/sign-in');
         return;
       }
 
@@ -64,7 +74,7 @@ const Dashboard = () => {
       } else {
         console.log('Failed to fetch profile:', data.message);
         if (data.message === 'Invalid or expired token') {
-          await AsyncStorage.removeItem('token');
+          await AsyncStorage.removeItem('authToken');
           router.replace('/sign-in');
         } else {
           Alert.alert('Error', data.message);
@@ -96,7 +106,7 @@ const Dashboard = () => {
           text: "Logout",
           style: "destructive",
           onPress: async () => {
-            await AsyncStorage.removeItem('token');
+            await AsyncStorage.removeItem('authToken');
             router.replace('/');
           },
         },

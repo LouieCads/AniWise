@@ -2,6 +2,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, ScrollV
 import { router } from 'expo-router';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SignUpSchema = Yup.object().shape({
   name: Yup.string()
@@ -39,7 +40,7 @@ export default function SignUp() {
 
   const handleSignUp = async (values, { setSubmitting }) => {
     try {
-      const response = await fetch('http://192.168.100.134:3000/api/signup', {
+      const response = await fetch('http://192.168.254.169:3000/api/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -50,10 +51,11 @@ export default function SignUp() {
     const data = await response.json();
 
     if (data.success) {
+      await AsyncStorage.setItem('authToken', data.token);
       Alert.alert('Success', data.message, [
         {
           text: 'OK',
-          onPress: () => router.push('/sign-in') // ✅ Route to /mapping
+          onPress: () => router.push('/sign-in')
         }
       ]);
     } else {

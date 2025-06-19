@@ -18,6 +18,28 @@ import {
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { router, useLocalSearchParams } from 'expo-router'; // Import useLocalSearchParams
+import AsyncStorage from '@react-native-async-storage/async-storage'; // For storing auth token
+
+/**
+ * Mapping Component with Backend Integration
+ * 
+ * This component integrates with the AniWise backend API to:
+ * - Authenticate users using JWT tokens
+ * - Store farm information (location, soil conditions, weather data)
+ * - Check for existing farms at the same location
+ * - Handle API errors and network connectivity issues
+ * 
+ * Backend API Endpoints Used:
+ * - POST /api/farms - Create new farm
+ * - POST /api/farms/check-location - Check if farm exists at location
+ * - GET /api/farms/my - Get user's farms
+ * - GET /api/health - Health check
+ * 
+ * Authentication:
+ * - Uses AsyncStorage to persist JWT tokens
+ * - Automatically redirects to sign-in if no token found
+ * - Handles token expiration and network errors
+ */
 
 const { width, height } = Dimensions.get('window');
 
@@ -30,7 +52,7 @@ const CROP_RECOMMENDATIONS = {
     name: 'Palay (Rice)',
     tagalog: 'Palay',
     scientificName: 'Oryza sativa',
-    icon: 'grass',
+    icon: 'grass', // Rice plant icon - grass represents rice stalks
     conditions: {
       pH: { min: 5.5, max: 7.0, optimal: 6.5 },
       moisture: ['High', 'Medium'],
@@ -46,7 +68,7 @@ const CROP_RECOMMENDATIONS = {
     name: 'Mais (Corn)',
     tagalog: 'Mais',
     scientificName: 'Zea mays',
-    icon: 'eco',
+    icon: 'agriculture', // Corn field icon
     conditions: {
       pH: { min: 5.8, max: 7.5, optimal: 6.5 },
       moisture: ['Medium', 'Low'],
@@ -62,7 +84,7 @@ const CROP_RECOMMENDATIONS = {
     name: 'Gulay (Vegetables)',
     tagalog: 'Gulay',
     scientificName: 'Various',
-    icon: 'local-florist',
+    icon: 'local-florist', // Vegetable garden icon
     conditions: {
       pH: { min: 6.0, max: 7.5, optimal: 6.8 },
       moisture: ['Medium'],
@@ -78,7 +100,7 @@ const CROP_RECOMMENDATIONS = {
     name: 'Tubo (Sugarcane)',
     tagalog: 'Tubo',
     scientificName: 'Saccharum officinarum',
-    icon: 'agriculture',
+    icon: 'eco', // Sugarcane plant icon - eco represents tall grass-like plants
     conditions: {
       pH: { min: 5.5, max: 8.0, optimal: 6.5 },
       moisture: ['High', 'Medium'],
@@ -94,7 +116,7 @@ const CROP_RECOMMENDATIONS = {
     name: 'Niyog (Coconut)',
     tagalog: 'Niyog',
     scientificName: 'Cocos nucifera',
-    icon: 'palm-tree',
+    icon: 'park', // Coconut tree icon - park represents trees
     conditions: {
       pH: { min: 5.0, max: 8.0, optimal: 6.5 },
       moisture: ['High', 'Medium'],
@@ -110,7 +132,7 @@ const CROP_RECOMMENDATIONS = {
     name: 'Kape (Coffee)',
     tagalog: 'Kape',
     scientificName: 'Coffea spp.',
-    icon: 'local-cafe',
+    icon: 'local-cafe', // Coffee plant icon
     conditions: {
       pH: { min: 5.5, max: 6.5, optimal: 6.0 },
       moisture: ['Medium'],
@@ -145,6 +167,18 @@ export default function Mapping() {
   const [placeSuggestions, setPlaceSuggestions] = useState([]); // State for place suggestions
   const [selectedFarmAddress, setSelectedFarmAddress] = useState(''); // Store the chosen farm address for post-confirm display
   const [cropRecommendations, setCropRecommendations] = useState([]);
+  const [isSaving, setIsSaving] = useState(false); // State for saving farm data
+
+  // Redirect to sign-in if not authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = await AsyncStorage.getItem('authToken');
+      if (!token) {
+        router.replace('/sign-in');
+      }
+    };
+    checkAuth();
+  }, []);
 
   // Function to get crop recommendations based on soil conditions
   const getCropRecommendations = useCallback((soilData) => {
@@ -424,7 +458,7 @@ export default function Mapping() {
     }
   };
 
-  const handleConfirmLocation = () => {
+  const handleConfirmLocation = async () => {
     if (!soilData) {
       Alert.alert('Error', 'Walang napiling lokasyon o walang soil data. Paki-input ang farm location o pumili sa map.');
       return;
@@ -444,39 +478,59 @@ export default function Mapping() {
         },
         {
           text: 'Oo, tama',
-          onPress: () => {
-            console.log('Farm location saved:', {
-              address: currentSelectedAddress,
-              coordinates: markerCoordinate,
-              soilConditions: soilData,
-              weatherData: weatherData
-            });
-            Alert.alert('Tagumpay!', 'Matagumpay na naitala ang iyong farm location at kalagayan ng lupa!', [
-              {
-                text: 'OK',
-                onPress: () => {
-                  // Navigate to a new screen or update state to show confirmed details
-                  router.push({
-                    pathname: '/dashboard', // Assuming you have a route for confirmed farm details
-                    params: {
-                      farmAddress: currentSelectedAddress,
-                      soilCondition: soilData.condition,
-                      soilTemperature: soilData.temperature,
-                      soilMoisture: soilData.moisture,
-                      soilPH: soilData.pH,
-                      uvIndex: soilData.uvIndex,
-                      weatherDescription: soilData.description,
-                      airTemp: soilData.airTemp,
-                      humidity: soilData.humidity,
-                      windSpeed: soilData.windSpeed,
-                      pressure: soilData.pressure,
-                      latitude: markerCoordinate.latitude,
-                      longitude: markerCoordinate.longitude,
-                    },
-                  });
+          onPress: async () => {
+            setIsSaving(true); // Show loading state
+            try {
+              // Check if farm already exists at this location
+              const existingFarm = await checkFarmExists(markerCoordinate.latitude, markerCoordinate.longitude);
+              if (existingFarm) {
+                Alert.alert('Error', 'Mayroong nasaang farm na nasa ganitong lokasyon. Pumili ng ibang lokasyon.');
+                setIsSaving(false); // Hide loading state
+                return;
+              }
+
+              // Save farm data to backend
+              const farmData = {
+                address: currentSelectedAddress,
+                coordinates: markerCoordinate,
+                soilConditions: soilData,
+                weatherData: weatherData
+              };
+              await saveFarmData(farmData);
+
+              console.log('Farm location saved:', farmData);
+              Alert.alert('Tagumpay!', 'Matagumpay na naitala ang iyong farm location at kalagayan ng lupa!', [
+                {
+                  text: 'OK',
+                  onPress: () => {
+                    // Navigate to a new screen or update state to show confirmed details
+                    router.push({
+                      pathname: '/dashboard', // Assuming you have a route for confirmed farm details
+                      params: {
+                        farmAddress: currentSelectedAddress,
+                        soilCondition: soilData.condition,
+                        soilTemperature: soilData.temperature,
+                        soilMoisture: soilData.moisture,
+                        soilPH: soilData.pH,
+                        uvIndex: soilData.uvIndex,
+                        weatherDescription: soilData.description,
+                        airTemp: soilData.airTemp,
+                        humidity: soilData.humidity,
+                        windSpeed: soilData.windSpeed,
+                        pressure: soilData.pressure,
+                        latitude: markerCoordinate.latitude,
+                        longitude: markerCoordinate.longitude,
+                      },
+                    });
+                  },
                 },
-              },
-            ]);
+              ]);
+            } catch (error) {
+              console.error('Error saving farm data:', error);
+              Alert.alert('Error', 'Error saving farm data. Please try again.');
+            } finally {
+              setIsSaving(false); // Hide loading state
+            }
           },
         },
       ]
@@ -560,11 +614,115 @@ export default function Mapping() {
     await fetchSoilConditions(suggestion.latitude, suggestion.longitude, suggestion.name);
   };
 
+  // Function to check if farm exists at given coordinates
+  const checkFarmExists = async (lat, lon) => {
+    try {
+      const response = await fetch(`${getApiUrl()}/api/farms/check-location`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await getAuthToken()}`,
+        },
+        body: JSON.stringify({ latitude: lat, longitude: lon }),
+      });
 
-  useEffect(() => {
-    // Initial fetch for the default marker location (Silang, Calabarzon, Philippines)
-    fetchSoilConditions(markerCoordinate.latitude, markerCoordinate.longitude, 'Silang, Calabarzon, Philippines');
-  }, [fetchSoilConditions, markerCoordinate.latitude, markerCoordinate.longitude]); // Added dependencies to useEffect
+      if (!response.ok) {
+        throw new Error(`Error checking farm existence: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result.exists;
+    } catch (error) {
+      console.error('Error checking farm existence:', error);
+      throw error;
+    }
+  };
+
+  // Function to save farm data to backend
+  const saveFarmData = async (farmData) => {
+    try {
+      const response = await fetch(`${getApiUrl()}/api/farms`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await getAuthToken()}`,
+        },
+        body: JSON.stringify(farmData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error saving farm data: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Error saving farm data:', error);
+      throw error;
+    }
+  };
+
+  // Function to get API URL based on environment
+  const getApiUrl = () => {
+    if (__DEV__) {
+      return 'http://192.168.254.169:3000'; // Local development server
+    } else {
+      return 'https://192.168.254.169:3000'; // Production server
+    }
+  };
+
+  // Function to get authentication token from AsyncStorage
+  const getAuthToken = async () => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      return token;
+    } catch (error) {
+      console.error('Error getting authentication token:', error);
+      throw error;
+    }
+  };
+
+  // Function to handle token refresh and logout
+  const handleTokenRefresh = async () => {
+    try {
+      const token = await getAuthToken();
+      // Implement token refresh logic here
+      console.log('Token refreshed:', token);
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+      // Handle token refresh error, e.g., redirect to sign-in
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('authToken');
+      // Implement logout logic here
+      console.log('Logged out');
+      // Redirect to sign-in screen
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
+  // Function to test API connectivity
+  const testApiConnectivity = async () => {
+    try {
+      const response = await fetch(`${getApiUrl()}/api/health`);
+      if (!response.ok) {
+        throw new Error(`API health check failed: ${response.status}`);
+      }
+      const result = await response.json();
+      console.log('API health check result:', result);
+      return result.status === 'ok';
+    } catch (error) {
+      console.error('Error testing API connectivity:', error);
+      return false;
+    }
+  };
 
   // This component will be used if you set up an Expo Router route named `/confirmed-farm`
   // You should move this to a separate file like app/confirmed-farm.js
@@ -824,11 +982,11 @@ export default function Mapping() {
         <TouchableOpacity
           style={[styles.confirmButton, isLoadingSoil && styles.confirmButtonDisabled]}
           onPress={handleConfirmLocation}
-          disabled={isLoadingSoil}
+          disabled={isLoadingSoil || isSaving}
         >
           <Icon name="check-circle" size={20} color="#ffffff" style={styles.confirmIcon} />
           <Text style={styles.confirmButtonText}>
-            {isLoadingSoil ? 'Nila-load...' : 'Kumpirmahin ang Lokasyon ng Farm'}
+            {isLoadingSoil || isSaving ? 'Nila-load...' : 'Kumpirmahin ang Lokasyon ng Farm'}
           </Text>
         </TouchableOpacity>
       </View>

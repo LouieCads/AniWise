@@ -9,41 +9,38 @@ export default function SignIn() {
 
   const handleSignIn = async () => {
     // Basic validation
-    // if (!form.name || !form.password) {
-    //   Alert.alert('Error', 'Pangalan at password ay kailangan');
-    //   return;
-    // }
+    if (!form.name || !form.password) {
+      Alert.alert('Error', 'Pangalan at password ay kailangan');
+      return;
+    }
 
-    // setLoading(true);
-    // setLoading(true);
+    setLoading(true);
 
     try {
       // Replace 'YOUR_LOCAL_IP' with your actual local IP address
       // You can find it by running 'ipconfig' (Windows) or 'ifconfig' (Mac/Linux)
-      // const response = await fetch('http://192.168.100.134:3000/api/signin', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(form),
-      // });
+      const response = await fetch('http://192.168.254.169:3000/api/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(form),
+      });
 
-      // const data = await response.json();
-      // const data = await response.json();
+      const data = await response.json();
 
-      // if (data.success) {
-      //   // Store the token in AsyncStorage
-      //   await AsyncStorage.setItem('token', data.token);
-      //   Alert.alert('Success', data.message, [
-      //     {
-      //       text: 'OK',
-            // onPress: () => 
-            router.push('/mapping')
-      //     }
-      //   ]);
-      // } else {
-      //   Alert.alert('Error', data.message);
-      // }
+      if (data.success) {
+        // Store the token in AsyncStorage
+        await AsyncStorage.setItem('authToken', data.token);
+        Alert.alert('Success', data.message, [
+          {
+            text: 'OK',
+            onPress: () => router.push('/mapping')
+          }
+        ]);
+      } else {
+        Alert.alert('Error', data.message);
+      }
     } catch (error) {
       console.error('Sign-in error:', error);
       Alert.alert('Error', 'Network error. Make sure the server is running.');
