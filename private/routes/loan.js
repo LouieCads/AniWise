@@ -42,7 +42,7 @@ router.post("/loans", authenticateToken, async (req, res) => {
   if (twilioClient && formData.contactNumber) {
     try {
       // Always send to the Twilio phone number for now (for testing)
-      const toNumber = "+18777804236";
+      const toNumber = config.TWILIO_TO_PHONE_NUMBER;
       await twilioClient.messages.create({
         body: "Your loan has been successfully completed. Thank you!",
         from: config.TWILIO_PHONE_NUMBER,
