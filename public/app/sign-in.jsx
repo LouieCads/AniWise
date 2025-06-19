@@ -32,12 +32,38 @@ export default function SignIn() {
       if (data.success) {
         // Store the token in AsyncStorage
         await AsyncStorage.setItem('authToken', data.token);
-        Alert.alert('Success', data.message, [
-          {
-            text: 'OK',
-            onPress: () => router.push('/mapping')
+        // Check if user has farm data
+        try {
+          const farmRes = await fetch('http://192.168.254.169:3000/api/farms/my', {
+            headers: { 'Authorization': `Bearer ${data.token}` }
+          });
+          const farmData = await farmRes.json();
+          if (farmData.success && Array.isArray(farmData.farms) && farmData.farms.length > 0) {
+            // User has farm data, redirect to dashboard
+            Alert.alert('Success', data.message, [
+              {
+                text: 'OK',
+                onPress: () => router.push('/dashboard')
+              }
+            ]);
+          } else {
+            // No farm data, redirect to mapping
+            Alert.alert('Success', data.message, [
+              {
+                text: 'OK',
+                onPress: () => router.push('/mapping')
+              }
+            ]);
           }
-        ]);
+        } catch (farmError) {
+          // If farm check fails, default to mapping
+          Alert.alert('Success', data.message, [
+            {
+              text: 'OK',
+              onPress: () => router.push('/mapping')
+            }
+          ]);
+        }
       } else {
         Alert.alert('Error', data.message);
       }

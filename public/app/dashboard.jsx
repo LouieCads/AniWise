@@ -18,23 +18,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [credibilityScore, setCredibilityScore] = useState(50); // Example score
+  const [credibilityScore, setCredibilityScore] = useState(null); // Now null by default
+  const [loanableAmount, setLoanableAmount] = useState(null); // New state for loan offer
   const [loanProgress, setLoanProgress] = useState({
-    totalAmount: 50000,
-    paidAmount: 32000,
-    remainingAmount: 18000,
-    progressPercentage: 50,
-    nextPaymentDate: 'May 15, 2025',
-    monthlyPayment: 5000
+    totalAmount: 0,
+    paidAmount: 0,
+    remainingAmount: 0,
+    progressPercentage: 0,
+    nextPaymentDate: '',
+    monthlyPayment: 0
   });
-
-  // New state for static soil information
-  const [soilInfo, setSoilInfo] = useState({
-    moisture: '65%',
-    temperature: '28°C',
-    humidity: '78%',
-    lastUpdated: 'June 17, 2025, 10:00 AM' // Static date, adjust as needed
-  });
+  const [soilInfo, setSoilInfo] = useState(null); // Will be set from backend
+  const [weatherInfo, setWeatherInfo] = useState(null); // New: store weatherData
 
   // Redirect to sign-in if not authenticated
   useEffect(() => {
@@ -47,50 +42,113 @@ const Dashboard = () => {
     checkAuth();
   }, []);
 
-  useEffect(() => {
-    fetchUserProfile();
-    // You can add API calls here to fetch credibility score and loan data
-    // If you want to fetch dynamic soil data, this is where you'd add the API call.
-  }, []);
-
-  const fetchUserProfile = async () => {
-    try {
-      const token = await AsyncStorage.getItem('authToken');
-      if (!token) {
-        console.log('No token found, redirecting to sign in');
-        return;
-      }
-
-      const response = await fetch('http://192.168.254.169:3000/api/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        setUser(data.user);
-      } else {
-        console.log('Failed to fetch profile:', data.message);
-        if (data.message === 'Invalid or expired token') {
-          await AsyncStorage.removeItem('authToken');
-          router.replace('/sign-in');
-        } else {
-          Alert.alert('Error', data.message);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      if (error.message.includes('Network')) {
-        Alert.alert('Error', 'Network error. Please check your connection.');
-      } else {
-        Alert.alert('Error', 'Something went wrong. Please try again.');
-      }
-    } finally {
-      setLoading(false);
+  // Helper: Calculate credibility score from soil conditions
+  const calculateCredibilityScore = (soil) => {
+    if (!soil) return 0;
+    let score = 50; // Start at 50
+    // Add points for good conditions
+    if (soil.condition === 'Good') score += 30;
+    else if (soil.condition === 'Fair') score += 10;
+    else score -= 10;
+    // Moisture: High = +10, Medium = +5, Low = -10
+    if (soil.moisture === 'High') score += 10;
+    else if (soil.moisture === 'Medium') score += 5;
+    else score -= 10;
+    // Temperature: 20-32°C ideal
+    const temp = parseFloat(soil.temperature);
+    if (!isNaN(temp)) {
+      if (temp >= 20 && temp <= 32) score += 10;
+      else if (temp >= 15 && temp <= 35) score += 5;
+      else score -= 5;
     }
+    // Humidity: 50-80% ideal
+    const humidity = parseFloat(soil.humidity);
+    if (!isNaN(humidity)) {
+      if (humidity >= 50 && humidity <= 80) score += 5;
+      else score -= 5;
+    }
+    // Clamp score
+    return Math.max(50, Math.min(100, score));
   };
+
+  // Helper: Determine loanable amount
+  const getLoanableAmount = (score) => {
+    if (score >= 91) return 50000;
+    if (score >= 81) return 30000;
+    if (score >= 71) return 20000;
+    if (score >= 61) return 10000;
+    if (score >= 50) return 5000;
+    return 0;
+  };
+
+  // Fetch farm data and calculate everything
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const token = await AsyncStorage.getItem('authToken');
+        if (!token) {
+          router.replace('/sign-in');
+          return;
+        }
+        // Fetch user profile (for greeting)
+        const profileRes = await fetch('http://192.168.254.169:3000/api/profile', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const profileData = await profileRes.json();
+        if (profileData.success) setUser(profileData.user);
+        // Fetch user's farms
+        const farmRes = await fetch('http://192.168.254.169:3000/api/farms/my', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const farmData = await farmRes.json();
+        if (farmData.success && farmData.farms.length > 0) {
+          // Use the first (or latest) farm
+          const farm = farmData.farms[0];
+          const soil = farm.soilConditions;
+          setSoilInfo({
+            moisture: soil.moisture,
+            temperature: soil.temperature + '°C',
+            humidity: soil.humidity + '%',
+            lastUpdated: farm.updatedAt ? new Date(farm.updatedAt).toLocaleString() : 'N/A',
+            condition: soil.condition
+          });
+          // Store weather info if available
+          if (farm.weatherData) {
+            setWeatherInfo(farm.weatherData);
+          } else {
+            setWeatherInfo(null);
+          }
+          // Calculate credibility score
+          const score = calculateCredibilityScore(soil);
+          setCredibilityScore(score);
+          // Determine loanable amount
+          setLoanableAmount(getLoanableAmount(score));
+          // Set loan progress (simulate, or use backend if available)
+          setLoanProgress({
+            totalAmount: getLoanableAmount(score),
+            paidAmount: 0,
+            remainingAmount: getLoanableAmount(score),
+            progressPercentage: 0,
+            nextPaymentDate: '',
+            monthlyPayment: 0
+          });
+        } else {
+          setSoilInfo(null);
+          setCredibilityScore(null);
+          setLoanableAmount(null);
+        }
+      } catch (error) {
+        Alert.alert('Error', 'Could not load farm data. Please check your connection.');
+        setSoilInfo(null);
+        setCredibilityScore(null);
+        setLoanableAmount(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const handleLogout = () => {
     Alert.alert(
@@ -180,8 +238,21 @@ const Dashboard = () => {
             <View style={styles.iconBackground}>
               <Icon name="trending-up" size={28} color="#10b981" />
             </View>
-            <Text style={styles.temperature}>39°C</Text>
-            <Text style={styles.time}>1:00 AM</Text>
+            <Text style={styles.temperature}>
+              {weatherInfo && weatherInfo.main && typeof weatherInfo.main.temp !== 'undefined'
+                ? `${Math.round(weatherInfo.main.temp)}°C`
+                : '—'}
+            </Text>
+            <Text style={styles.time}>
+              {weatherInfo && weatherInfo.weather && weatherInfo.weather[0]
+                ? weatherInfo.weather[0].description.charAt(0).toUpperCase() + weatherInfo.weather[0].description.slice(1)
+                : 'Walang weather data'}
+            </Text>
+            <Text style={styles.time}>
+              {weatherInfo && weatherInfo.dt
+                ? new Date(weatherInfo.dt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : ''}
+            </Text>
             <View style={styles.cardAccent} />
           </LinearGradient>
 
@@ -208,41 +279,29 @@ const Dashboard = () => {
               <Icon name="verified-user" size={24} color="#10b981" />
               <Text style={styles.credibilityTitle}>Credibility Score</Text>
             </View>
-            <TouchableOpacity style={styles.infoButton}>
-              <Icon name="info-outline" size={20} color="#64748b" />
-            </TouchableOpacity>
           </View>
-          
           <View style={styles.credibilityContent}>
             <View style={styles.scoreContainer}>
-              <Text style={styles.scoreNumber}>{credibilityScore}</Text>
+              <Text style={styles.scoreNumber}>{credibilityScore !== null ? credibilityScore : '--'}</Text>
               <Text style={styles.scoreOutOf}>/100</Text>
             </View>
-            <Text style={styles.scoreStatus}>{getCredibilityStatus(credibilityScore)}</Text>
-            
-            {/* Credit Score Meter - Updated for 3 sections */}
+            <Text style={styles.scoreStatus}>{credibilityScore !== null ? getCredibilityStatus(credibilityScore) : 'No Data'}</Text>
+            {/* Credit Score Meter */}
             <View style={styles.meterContainer}>
               <View style={styles.meterTrack}>
-                {/* Poor Section (0-33) */}
                 <View style={[styles.meterSection, { backgroundColor: '#fee2e2' }]} />
-                {/* Fair Section (34-66) */}
                 <View style={[styles.meterSection, { backgroundColor: '#fed7aa' }]} />
-                {/* Good Section (67-100) */}
                 <View style={[styles.meterSection, { backgroundColor: '#d1fae5' }]} />
               </View>
-              
-              {/* Score Indicator */}
               <View 
                 style={[
                   styles.scoreIndicator, 
                   { 
-                    left: `${(credibilityScore / 100) * 100}%`,
-                    backgroundColor: getMeterColor(credibilityScore)
+                    left: `${(credibilityScore !== null ? credibilityScore : 0)}%`,
+                    backgroundColor: getMeterColor(credibilityScore || 0)
                   }
                 ]} 
               />
-              
-              {/* Meter Labels - Updated for 3 labels */}
               <View style={styles.meterLabels}>
                 <Text style={styles.meterLabel}>Poor</Text>
                 <Text style={styles.meterLabel}>Fair</Text>
@@ -250,16 +309,14 @@ const Dashboard = () => {
               </View>
             </View>
           </View>
-          
-          <View style={styles.credibilityFooter}>
-            <View style={styles.credibilityMetric}>
-              <Icon name="payment" size={16} color="#64748b" />
-              <Text style={styles.metricText}>Payment History</Text>
-            </View>
-            <View style={styles.credibilityMetric}>
-              <Icon name="account-balance" size={16} color="#64748b" />
-              <Text style={styles.metricText}>Credit Usage</Text>
-            </View>
+          {/* Farmer-friendly loan offer */}
+          <View style={{ alignItems: 'center', marginTop: 10 }}>
+            <Text style={{ fontSize: 16, color: '#0f172a', fontWeight: 'bold' }}>
+              {loanableAmount ? `Pwede kang mag-loan ng hanggang ₱${loanableAmount.toLocaleString()}` : 'Walang loan offer sa ngayon.'}
+            </Text>
+            <Text style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>
+              Batay sa kalagayan ng iyong lupa
+            </Text>
           </View>
         </View>
 
@@ -313,26 +370,36 @@ const Dashboard = () => {
           </View>
         </View>
 
-        {/* Soil Information Card - Added Here */}
+        {/* Soil Information Card - Updated for real data */}
         <View style={styles.soilInfoCard}>
           <View style={styles.soilInfoHeader}>
             <Icon name="grass" size={24} color="#059669" />
-            <Text style={styles.soilInfoTitle}>Soil Conditions</Text>
+            <Text style={styles.soilInfoTitle}>Kalagayan ng Lupa</Text>
           </View>
           <View style={styles.soilInfoContent}>
-            <View style={styles.soilInfoRow}>
-              <Text style={styles.soilInfoLabel}>Moisture:</Text>
-              <Text style={styles.soilInfoValue}>{soilInfo.moisture}</Text>
-            </View>
-            <View style={styles.soilInfoRow}>
-              <Text style={styles.soilInfoLabel}>Temperature:</Text>
-              <Text style={styles.soilInfoValue}>{soilInfo.temperature}</Text>
-            </View>
-            <View style={styles.soilInfoRow}>
-              <Text style={styles.soilInfoLabel}>Humidity:</Text>
-              <Text style={styles.soilInfoValue}>{soilInfo.humidity}</Text>
-            </View>
-            <Text style={styles.soilInfoLastUpdated}>Last Updated: {soilInfo.lastUpdated}</Text>
+            {soilInfo ? (
+              <>
+                <View style={styles.soilInfoRow}>
+                  <Text style={styles.soilInfoLabel}>Moisture:</Text>
+                  <Text style={styles.soilInfoValue}>{soilInfo.moisture}</Text>
+                </View>
+                <View style={styles.soilInfoRow}>
+                  <Text style={styles.soilInfoLabel}>Temperatura:</Text>
+                  <Text style={styles.soilInfoValue}>{soilInfo.temperature}</Text>
+                </View>
+                <View style={styles.soilInfoRow}>
+                  <Text style={styles.soilInfoLabel}>Humidity:</Text>
+                  <Text style={styles.soilInfoValue}>{soilInfo.humidity}</Text>
+                </View>
+                <View style={styles.soilInfoRow}>
+                  <Text style={styles.soilInfoLabel}>Kalagayan:</Text>
+                  <Text style={styles.soilInfoValue}>{soilInfo.condition}</Text>
+                </View>
+                <Text style={styles.soilInfoLastUpdated}>Huling update: {soilInfo.lastUpdated}</Text>
+              </>
+            ) : (
+              <Text style={styles.soilInfoLabel}>Wala pang naitalang farm o lupa.</Text>
+            )}
           </View>
         </View>
 
@@ -548,14 +615,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#0f172a',
     marginLeft: 8,
-  },
-  infoButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#f1f5f9',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   credibilityContent: {
     alignItems: 'center',
