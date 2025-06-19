@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ProductDetailsPage = ({ route }) => {
   // Modal state
@@ -68,25 +69,63 @@ const ProductDetailsPage = ({ route }) => {
     });
   };
 
-  const handleSubmitLoan = () => {
+  // Utility to get API URL (reuse from mapping.jsx)
+  const getApiUrl = () => {
+    if (__DEV__) {
+      return 'http://192.168.254.169:3000';
+    } else {
+      return 'https://192.168.254.169:3000';
+    }
+  };
+
+  // Utility to get auth token (reuse from mapping.jsx)
+  const getAuthToken = async () => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      if (!token) throw new Error('No authentication token found');
+      return token;
+    } catch (error) {
+      console.error('Error getting authentication token:', error);
+      throw error;
+    }
+  };
+
+  const handleSubmitLoan = async () => {
     // Validate required fields
     if (!loanFormData.pangalan || !loanFormData.contactNumber || !loanFormData.address) {
       Alert.alert('Error', 'Pakiompleto ang lahat ng kinakailangang impormasyon.');
       return;
     }
 
-    // Process loan application
-    console.log('Loan application submitted:', loanFormData);
-    Alert.alert(
-      'Salamat!',
-      'Ang inyong loan application ay naipadala na. Makakakuha kayo ng sagot sa loob ng 24 oras.',
-      [
-        {
-          text: 'OK',
-          onPress: () => handleCloseLoanModal(),
+    try {
+      const token = await getAuthToken();
+      const response = await fetch(`${getApiUrl()}/api/loans`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
-      ]
-    );
+        body: JSON.stringify(loanFormData),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        Alert.alert('Error', data.message || 'Loan application failed.');
+        return;
+      }
+      Alert.alert(
+        'Salamat!',
+        'Ang inyong loan application ay naipadala na. Makakakuha kayo ng sagot sa loob ng 24 oras.',
+        [
+          {
+            text: 'OK',
+            onPress: () => handleCloseLoanModal(),
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Loan application error:', error);
+      Alert.alert('Error', 'Network error. Make sure the server is running.');
+    }
   };
 
   const updateFormData = (field, value) => {
@@ -100,6 +139,30 @@ const ProductDetailsPage = ({ route }) => {
     // Navigate to planting guide
     console.log('How to plant:', productData.name);
   };
+
+  // Fetch user profile and autofill form fields
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = await getAuthToken();
+        const response = await fetch(`${getApiUrl()}/api/profile`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (data.success && data.user) {
+          setLoanFormData(prev => ({
+            ...prev,
+            pangalan: data.user.name || '',
+            contactNumber: data.user.contactNumber || '',
+            address: data.user.location || '',
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to fetch user profile:', error);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -214,6 +277,7 @@ const ProductDetailsPage = ({ route }) => {
                   onChangeText={(value) => updateFormData('pangalan', value)}
                   placeholder="Ilagay ang buong pangalan"
                   placeholderTextColor="#9ca3af"
+                  editable={false}
                 />
               </View>
 
@@ -228,6 +292,7 @@ const ProductDetailsPage = ({ route }) => {
                   placeholderTextColor="#9ca3af"
                   keyboardType="phone-pad"
                   maxLength={11}
+                  editable={false}
                 />
               </View>
 
@@ -242,6 +307,7 @@ const ProductDetailsPage = ({ route }) => {
                   placeholderTextColor="#9ca3af"
                   multiline={true}
                   numberOfLines={3}
+                  editable={false}
                 />
               </View>
 

@@ -4,6 +4,7 @@ const config = require("./config/config");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
 const farmRoutes = require("./routes/farm");
+const loanRoutes = require("./routes/loan");
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(express.json());
 app.use("/api", authRoutes);
 app.use("/api", userRoutes);
 app.use("/api", farmRoutes);
+app.use("/api", loanRoutes);
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
@@ -34,4 +36,5 @@ app.listen(config.PORT, () => {
   console.log(`🔧 Health check: http://localhost:${config.PORT}/api/health`);
   console.log(`👀 View all users: http://localhost:${config.PORT}/api/users`);
   console.log(`🌾 View all farms: http://localhost:${config.PORT}/api/farms`);
+  console.log(`📱 View all loans: http://localhost:${config.PORT}/api/loans`);
 });
