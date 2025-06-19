@@ -13,8 +13,9 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Using MaterialCommunityIcons for weather icons
 import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const WEATHER_API_KEY = 'YOUR_OPENWEATHER_API_KEY'; // Replace with your actual API key
+const WEATHER_API_KEY = process.env.OPENWEATHER_API_KEY || '98bb67c7b4f0e326ccdfebd2e15577f3'; // Replace with your actual API key
 const CITY_NAME = 'Silang'; // Specify the city
 const LATITUDE = 14.2384; // Latitude for Silang, Calabarzon, Philippines
 const LONGITUDE = 120.9757; // Longitude for Silang, Calabarzon, Philippines
@@ -33,31 +34,31 @@ const WeatherPage = () => {
     setLoading(true);
     setError(null);
     try {
-      // Fetch current weather
-      const currentWeatherResponse = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${LATITUDE}&lon=${LONGITUDE}&units=metric&appid=${WEATHER_API_KEY}`
-      );
-      const currentWeatherData = await currentWeatherResponse.json();
-
-      if (currentWeatherResponse.ok) {
-        setCurrentWeather(currentWeatherData);
-      } else {
-        throw new Error(currentWeatherData.message || 'Failed to fetch current weather.');
+      const token = await AsyncStorage.getItem('authToken');
+      if (!token) {
+        router.replace('/sign-in');
+        return;
       }
-
-      // Fetch 7-day forecast (using One Call API for daily forecast)
-      const forecastResponse = await fetch(
-        `https://api.openweathermap.org/data/3.0/onecall?lat=${LATITUDE}&lon=${LONGITUDE}&exclude=current,minutely,hourly,alerts&units=metric&appid=${WEATHER_API_KEY}`
-      );
-      const forecastData = await forecastResponse.json();
-
-      if (forecastResponse.ok) {
-        // Take the next 7 days, excluding the current day if it's included in 'daily'
-        setForecast(forecastData.daily.slice(1, 8)); 
+      // Fetch user's farms
+      const farmRes = await fetch('http://192.168.254.169:3000/api/farms/my', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const farmData = await farmRes.json();
+      if (farmData.success && farmData.farms.length > 0) {
+        const farm = farmData.farms[0];
+        if (farm.weatherData) {
+          setCurrentWeather(farm.weatherData.current || farm.weatherData); // support both {current, forecast} and flat
+          setForecast(farm.weatherData.forecast || []);
+        } else {
+          setCurrentWeather(null);
+          setForecast([]);
+          setError('No weather data available for your farm.');
+        }
       } else {
-        throw new Error(forecastData.message || 'Failed to fetch forecast.');
+        setCurrentWeather(null);
+        setForecast([]);
+        setError('No farm data found.');
       }
-
     } catch (err) {
       console.error('Error fetching weather data:', err);
       setError(err.message || 'Could not load weather data. Please try again.');
@@ -107,18 +108,18 @@ const WeatherPage = () => {
     return (
       <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#10b981" />
-        <Text style={styles.loadingText}>Fetching weather data...</Text>
+        <Text style={styles.loadingText}>Kinukuha ang datos ng panahon...</Text>
       </SafeAreaView>
     );
   }
 
-  if (error) {
+  if (error || !currentWeather) {
     return (
       <SafeAreaView style={styles.errorContainer}>
         <Icon name="alert-circle-outline" size={50} color="#ef4444" />
-        <Text style={styles.errorText}>{error}</Text>
+        <Text style={styles.errorText}>Walang datos ng panahon sa iyong bukid. Subukang muli mamaya.</Text>
         <TouchableOpacity onPress={fetchWeatherData} style={styles.retryButton}>
-          <Text style={styles.retryButtonText}>Tap to Retry</Text>
+          <Text style={styles.retryButtonText}>Subukang Muli</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -141,41 +142,47 @@ const WeatherPage = () => {
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <Icon name="arrow-left" size={24} color="#ffffff" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>{CITY_NAME} Weather</Text>
+            <Text style={styles.headerTitle}>Panahon ng Bukid</Text>
             <View style={{ width: 24 }} /> {/* Spacer for symmetry */}
           </View>
         </LinearGradient>
 
         {/* Current Weather Card */}
-        {currentWeather && (
-          <View style={styles.currentWeatherCard}>
-            <Text style={styles.currentWeatherDate}>{getFullDate(currentWeather.dt)}</Text>
-            <View style={styles.currentWeatherMain}>
-              <Icon name={getWeatherIcon(currentWeather.weather[0].icon)} size={80} color="#10b981" />
-              <View style={styles.currentWeatherTempContainer}>
-                <Text style={styles.currentTemperature}>{Math.round(currentWeather.main.temp)}°C</Text>
-                <Text style={styles.weatherDescription}>{currentWeather.weather[0].description}</Text>
-              </View>
-            </View>
-            <View style={styles.currentWeatherDetails}>
-              <View style={styles.detailItem}>
-                <Icon name="water-percent" size={20} color="#64748b" />
-                <Text style={styles.detailText}>Humidity: {currentWeather.main.humidity}%</Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Icon name="weather-windy" size={20} color="#64748b" />
-                <Text style={styles.detailText}>Wind: {currentWeather.wind.speed} m/s</Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Icon name="thermometer-lines" size={20} color="#64748b" />
-                <Text style={styles.detailText}>Feels like: {Math.round(currentWeather.main.feels_like)}°C</Text>
-              </View>
+        <View style={styles.currentWeatherCard}>
+          <Text style={styles.currentWeatherDate}>{getFullDate(currentWeather.dt)}</Text>
+          <View style={styles.currentWeatherMain}>
+            <Icon name={getWeatherIcon(currentWeather.weather && currentWeather.weather[0]?.icon)} size={90} color="#10b981" />
+            <View style={styles.currentWeatherTempContainer}>
+              <Text style={styles.currentTemperature}>{currentWeather.main && currentWeather.main.temp !== undefined ? Math.round(currentWeather.main.temp) : '--'}°C</Text>
+              <Text style={styles.weatherDescription}>{currentWeather.weather && currentWeather.weather[0]?.description ? currentWeather.weather[0].description.charAt(0).toUpperCase() + currentWeather.weather[0].description.slice(1) : ''}</Text>
             </View>
           </View>
-        )}
+          <View style={styles.currentWeatherDetails}>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Temperatura:</Text>
+              <Text style={styles.detailValue}>{currentWeather.main && currentWeather.main.temp !== undefined ? Math.round(currentWeather.main.temp) + '°C' : '--'}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Halumigmig:</Text>
+              <Text style={styles.detailValue}>{currentWeather.main && currentWeather.main.humidity !== undefined ? currentWeather.main.humidity + '%' : '--'}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Hangin:</Text>
+              <Text style={styles.detailValue}>{currentWeather.wind && currentWeather.wind.speed !== undefined ? currentWeather.wind.speed + ' m/s' : '--'}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Pakiramdam:</Text>
+              <Text style={styles.detailValue}>{currentWeather.main && currentWeather.main.feels_like !== undefined ? Math.round(currentWeather.main.feels_like) + '°C' : '--'}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Kondisyon:</Text>
+              <Text style={styles.detailValue}>{currentWeather.weather && currentWeather.weather[0]?.description ? currentWeather.weather[0].description.charAt(0).toUpperCase() + currentWeather.weather[0].description.slice(1) : '--'}</Text>
+            </View>
+          </View>
+        </View>
 
         {/* 7-Day Forecast */}
-        <Text style={styles.forecastTitle}>7-Day Forecast</Text>
+        {forecast.length > 0 && <Text style={styles.forecastTitle}>7-Day Forecast</Text>}
         <View style={styles.forecastContainer}>
           {forecast.map((day, index) => (
             <LinearGradient
@@ -184,9 +191,9 @@ const WeatherPage = () => {
               style={styles.forecastCard}
             >
               <Text style={styles.forecastDay}>{getDayName(day.dt)}</Text>
-              <Icon name={getWeatherIcon(day.weather[0].icon)} size={40} color="#10b981" />
-              <Text style={styles.forecastTemp}>{Math.round(day.temp.day)}°C</Text>
-              <Text style={styles.forecastDescription}>{day.weather[0].main}</Text>
+              <Icon name={getWeatherIcon(day.weather && day.weather[0]?.icon)} size={40} color="#10b981" />
+              <Text style={styles.forecastTemp}>{day.temp && day.temp.day !== undefined ? Math.round(day.temp.day) : '--'}°C</Text>
+              <Text style={styles.forecastDescription}>{day.weather && day.weather[0]?.main}</Text>
             </LinearGradient>
           ))}
         </View>
@@ -194,7 +201,7 @@ const WeatherPage = () => {
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
-      {/* Fixed Bottom Navigation - Re-used from Dashboard */}
+      {/* Fixed Bottom Navigation */}
       <View style={styles.bottomNavContainer}>
         <LinearGradient
           colors={['#ffffff', '#f8fafc']}
@@ -217,11 +224,11 @@ const WeatherPage = () => {
             </LinearGradient>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navButton} onPress={() => router.push('/catalog')}>
-            <Icon name="shopping-cart" size={24} color="#6b7280" />
-            <Text style={styles.navLabel}>Shop</Text>
+            <Icon name="cart" size={24} color="#6b7280" />
+            <Text style={styles.navLabel}>Loan</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navButton} onPress={() => router.push('/journal')}>
-            <Icon name="bell" size={24} color="#6b7280" />
+            <Icon name="book" size={24} color="#6b7280" />
             <Text style={styles.navLabel}>Journal</Text>
           </TouchableOpacity>
         </LinearGradient>
@@ -237,6 +244,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    paddingBottom: 120, // Prevent overlap with bottom nav
   },
   headerGradient: {
     paddingBottom: 20,
@@ -311,6 +319,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#64748b',
     marginBottom: 16,
+    marginLeft: 10,
   },
   currentWeatherMain: {
     flexDirection: 'row',
@@ -334,22 +343,27 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   currentWeatherDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    marginTop: 18,
+    backgroundColor: '#f8fafc',
+    borderRadius: 16,
+    padding: 18,
     width: '100%',
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
   },
-  detailItem: {
+  detailRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginHorizontal: 8,
+    marginBottom: 12,
   },
-  detailText: {
-    fontSize: 13,
-    color: '#64748b',
-    marginLeft: 6,
+  detailLabel: {
+    fontSize: 20,
+    color: '#14532d',
+    fontWeight: 'bold',
+  },
+  detailValue: {
+    fontSize: 22,
+    color: '#0f172a',
+    fontWeight: 'bold',
   },
   // Forecast Styles
   forecastTitle: {
@@ -363,14 +377,15 @@ const styles = StyleSheet.create({
   forecastContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center', // Center items horizontally
-    gap: 12, // Gap between forecast cards
-    paddingHorizontal: 20,
+    justifyContent: 'flex-start',
+    paddingHorizontal: 10,
     marginBottom: 20,
   },
   forecastCard: {
-    width: '30%', // Approximately 3 cards per row
-    aspectRatio: 0.8, // Maintain aspect ratio for height
+    flexBasis: '45%',
+    maxWidth: '45%',
+    margin: 6,
+    aspectRatio: 0.9,
     borderRadius: 20,
     padding: 12,
     alignItems: 'center',
@@ -380,9 +395,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 4,
+    backgroundColor: '#fff',
   },
   forecastDay: {
-    fontSize: 14,
+    fontSize: 1,
     fontWeight: 'bold',
     color: '#334155',
     marginBottom: 4,
@@ -402,7 +418,7 @@ const styles = StyleSheet.create({
   },
   // Re-used from Dashboard for consistency
   bottomSpacer: {
-    height: 100,
+    height: 120,
   },
   bottomNavContainer: {
     position: 'absolute',
@@ -412,6 +428,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 20,
     backgroundColor: 'transparent',
+    zIndex: 10,
   },
   bottomNav: {
     flexDirection: 'row',

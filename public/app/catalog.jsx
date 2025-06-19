@@ -164,7 +164,7 @@ const CatalogPage = () => {
             colors={['#ffffff', '#f8fafc']}
             style={styles.bottomNav}
             >
-            <TouchableOpacity style={styles.navButton}>
+            <TouchableOpacity style={styles.navButton} onPress={() => router.push('/weather')}>
                 <Icon name="cloud" size={24} color="#6b7280" />
                 <Text style={styles.navLabel}>Weather</Text>
             </TouchableOpacity>
@@ -182,10 +182,10 @@ const CatalogPage = () => {
             </TouchableOpacity>
             <TouchableOpacity style={styles.navButton} onPress={() => router.push('/catalog')}>
                 <Icon name="shopping-cart" size={24} color="#6b7280" />
-                <Text style={styles.navLabel} onPress={() => router.push('/catalog')}>Shop</Text>
+                <Text style={styles.navLabel} onPress={() => router.push('/catalog')}>Loan</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.navButton} onPress={() => router.push('/alerts')}>
-                <Icon name="notifications" size={24} color="#6b7280" />
+            <TouchableOpacity style={styles.navButton} onPress={() => router.push('/journal')}>
+                <Icon name="book" size={24} color="#6b7280" />
                 <Text style={styles.navLabel}>Journal</Text>
             </TouchableOpacity>
             </LinearGradient>

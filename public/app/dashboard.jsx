@@ -212,9 +212,9 @@ const Dashboard = () => {
               </View>
               <View style={styles.headerText}>
                 <Text style={styles.greeting}>
-                  Hello, {loading ? '...' : user?.name?.split(' ')[0] || 'User'}! 👋
+                  Hello, {loading ? '...' : user?.name?.split(' ')[0] || 'User'}!
                 </Text>
-                <Text style={styles.subtitle}>Ready to grow today?</Text>
+                <Text style={styles.subtitle}>Magandang araw!</Text>
               </View>
             </View>
             <View style={styles.headerRight}>
@@ -431,10 +431,10 @@ const Dashboard = () => {
           </TouchableOpacity>
           <TouchableOpacity style={styles.navButton} onPress={() => router.push('/catalog')}>
             <Icon name="shopping-cart" size={24} color="#6b7280" />
-            <Text style={styles.navLabel} onPress={() => router.push('/catalog')}>Shop</Text>
+            <Text style={styles.navLabel} onPress={() => router.push('/catalog')}>Loan</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navButton} onPress={() => router.push('/journal')}>
-            <Icon name="notifications" size={24} color="#6b7280" />
+            <Icon name="book" size={24} color="#6b7280" />
             <Text style={styles.navLabel}>Journal</Text>
           </TouchableOpacity>
         </LinearGradient>
