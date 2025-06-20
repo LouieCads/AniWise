@@ -15,11 +15,6 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Using Ma
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const WEATHER_API_KEY = process.env.OPENWEATHER_API_KEY || '98bb67c7b4f0e326ccdfebd2e15577f3'; // Replace with your actual API key
-const CITY_NAME = 'Silang'; // Specify the city
-const LATITUDE = 14.2384; // Latitude for Silang, Calabarzon, Philippines
-const LONGITUDE = 120.9757; // Longitude for Silang, Calabarzon, Philippines
-
 const WeatherPage = () => {
   const [currentWeather, setCurrentWeather] = useState(null);
   const [forecast, setForecast] = useState([]);

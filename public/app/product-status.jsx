@@ -12,18 +12,18 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 
 const OrderStatusTracker = ({ route }) => {
-  // You can get order data from route params
-  // const { orderId } = route?.params || {};
-  
-  // Sample order data - make this dynamic based on actual order
+  // Get order data from route params or use defaults
+  const params = route?.params || {};
   const [orderData] = useState({
-    orderNumber: "ORD-2025-001",
-    productName: "Binhi ng Palay",
-    quantity: "5 KG",
-    currentStatus: 1, // 0: processing, 1: shipping, 2: delivered
-    estimatedDelivery: "Hunyo 22, 2025",
-    deliveryTime: "2-3 araw",
-    riderPhone: "0917-123-4567"
+    orderNumber: params.orderNumber || "ORD-2025-001",
+    productName: params.productName || "Binhi ng Palay",
+    quantity: params.quantity || "5 KG",
+    currentStatus: typeof params.currentStatus === 'number' ? params.currentStatus : 1,
+    estimatedDelivery: params.estimatedDelivery || "Hunyo 22, 2025",
+    deliveryTime: params.deliveryTime || "2-3 araw",
+    riderPhone: params.riderPhone || "0917-123-4567",
+    totalPrice: params.totalPrice,
+    pricePerUnit: params.pricePerUnit,
   });
 
   const statusSteps = [

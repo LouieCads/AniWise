@@ -16,8 +16,19 @@ import {
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Picker } from '@react-native-picker/picker';
 
 const { width } = Dimensions.get('window');
+
+// List of crop names from catalog.jsx
+const cropOptions = [
+  'Palay',
+  'Moon Melon',
+  'Kamatis',
+  'Talong',
+  'Sili',
+  'Mais',
+];
 
 const ProductDetailsPage = ({ route }) => {
   // Modal state
@@ -172,6 +183,20 @@ const ProductDetailsPage = ({ route }) => {
             text: 'OK',
             onPress: () => {
               handleCloseLoanModal();
+              router.push({
+                pathname: '/product-status',
+                params: {
+                  orderNumber: data.loan?.orderNumber || 'ORD-' + Date.now(),
+                  productName: cropName,
+                  quantity: quantity + ' ' + selectedSize,
+                  currentStatus: 0, // Start at processing
+                  estimatedDelivery: data.loan?.estimatedDelivery || 'Sa loob ng 2-3 araw',
+                  deliveryTime: data.loan?.deliveryTime || '2-3 araw',
+                  riderPhone: data.loan?.riderPhone || '0917-123-4567',
+                  totalPrice,
+                  pricePerUnit,
+                }
+              });
             },
           },
         ]
@@ -388,13 +413,19 @@ const ProductDetailsPage = ({ route }) => {
 
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Pangalan ng Pananim *</Text>
-                <TextInput
-                  style={styles.textInput}
-                  value={cropName}
-                  onChangeText={setCropName}
-                  placeholder="Pangalan ng pananim"
-                  placeholderTextColor="#9ca3af"
-                />
+                {/* Dropdown for crop selection */}
+                <View style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, overflow: 'hidden', backgroundColor: '#fff' }}>
+                  <Picker
+                    selectedValue={cropName}
+                    onValueChange={setCropName}
+                    style={{ height: 55, width: '100%' }}
+                  >
+                    <Picker.Item label="Pumili ng pananim" value="" />
+                    {cropOptions.map((crop) => (
+                      <Picker.Item key={crop} label={crop} value={crop} />
+                    ))}
+                  </Picker>
+                </View>
               </View>
 
               <View style={styles.inputContainer}>
@@ -402,7 +433,7 @@ const ProductDetailsPage = ({ route }) => {
                 <TextInput
                   style={styles.textInput}
                   value={quantity.toString()}
-                  onChangeText={v => setQuantity(Number(v.replace(/[^0-9]/g, '')) || 1)}
+                  onChangeText={v => setQuantity(Number(v.replace(/[^0-9]/g, '')) || '')}
                   placeholder="1"
                   placeholderTextColor="#9ca3af"
                   keyboardType="numeric"
