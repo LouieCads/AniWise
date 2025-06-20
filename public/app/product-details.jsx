@@ -204,11 +204,15 @@ const ProductDetailsPage = ({ route }) => {
 
         {/* Product Info */}
         <View style={styles.productInfo}>
+          {/* Category Name, Name & Price Hierarchy */}
           <Text style={styles.category}>{productData.category}</Text>
-          <Text style={styles.productName}>{productData.name}</Text>
-          <Text style={styles.price}>₱{productData.price.toFixed(0)}</Text>
+          <View style={styles.namePriceContainer}>
+            <Text style={styles.productName}>{productData.name}</Text>
+            {/* Displaying price per kilo logic here, based on selectedSize or default */}
+            <Text style={styles.price}>₱{productData.price.toFixed(0)} / {selectedSize}</Text>
+          </View>
 
-          {/* Available Sizes */}
+          {/* Quantity */}
           <Text style={styles.sectionTitle}>Bilang</Text>
           <View style={styles.sizesContainer}>
             {productData.sizes.map((size, index) => (
@@ -233,6 +237,19 @@ const ProductDetailsPage = ({ route }) => {
           {/* Description */}
           <Text style={styles.sectionTitle}>Description</Text>
           <Text style={styles.description}>{productData.description}</Text>
+        </View>
+
+        {/* Bypass Buttons */}
+        <View style={styles.bypassButtonsContainer}>
+          <TouchableOpacity style={styles.bypassButton} onPress={() => router.push('product-repayment')}>
+            <Text style={styles.bypassButtonText}>Go to Product Repayment</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.bypassButton} onPress={() => router.push('product-status')}>
+            <Text style={styles.bypassButtonText}>Go to Product Status</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.bypassButton} onPress={() => router.push('product-pickup')}>
+            <Text style={styles.bypassButtonText}>Go to Product Pickup</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.bottomSpacer} />
@@ -428,10 +445,9 @@ const styles = StyleSheet.create({
   mainImage: {
     width: '100%',
     height: 300,
-    borderRadius: 0,
+    borderRadius: 8,
     marginBottom: 20,
     backgroundColor: '#f5f5f5',
-    borderRadius: 8,
   },
   thumbnailContainer: {
     flexDirection: 'row',
@@ -457,28 +473,36 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 5,
   },
+  namePriceContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10, // Adjusted for hierarchy
+  },
   productName: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#000',
-    marginBottom: 10,
+    flexShrink: 1, // Allow text to wrap
+    marginRight: 10, // Space between name and price
   },
   price: {
-    fontSize: 40,
+    fontSize: 24, // Adjusted font size for side-by-side
     fontWeight: 'bold',
     color: '#000',
-    marginBottom: 30,
+    textAlign: 'right', // Align price to the right
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#000',
     marginBottom: 15,
+    marginTop: 15, // Added some top margin for sections
   },
   sizesContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 30,
+    marginBottom: 20, // Adjusted for hierarchy
     gap: 10,
   },
   sizeButton: {
@@ -505,7 +529,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     lineHeight: 24,
+    marginBottom: 20, // Adjusted for new bypass buttons
+  },
+  bypassButtonsContainer: {
+    paddingHorizontal: 20,
+    marginTop: 20,
     marginBottom: 20,
+  },
+  bypassButton: {
+    backgroundColor: '#ADD8E6', // Light blue for bypass buttons
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 10, // Space between bypass buttons
+  },
+  bypassButtonText: {
+    color: '#00008B', // Dark blue text
+    fontSize: 16,
+    fontWeight: '600',
   },
   bottomSpacer: {
     height: 100,

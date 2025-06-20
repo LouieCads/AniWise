@@ -3,6 +3,8 @@ import { router } from 'expo-router';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useState } from 'react'; // Import useState
+import { MaterialCommunityIcons } from '@expo/vector-icons'; // Import an icon library, make sure you have it installed: expo install @expo/vector-icons
 
 const SignUpSchema = Yup.object().shape({
   name: Yup.string()
@@ -22,6 +24,9 @@ const SignUpSchema = Yup.object().shape({
 });
 
 export default function SignUp() {
+  // New state to manage password visibility
+  const [showPassword, setShowPassword] = useState(false);
+
   const fieldLabels = {
     name: 'Pangalan',
     contactNumber: 'Contact Number',
@@ -48,41 +53,32 @@ export default function SignUp() {
         body: JSON.stringify(values),
       });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (data.success) {
-      await AsyncStorage.setItem('authToken', data.token);
-      Alert.alert('Success', data.message, [
-        {
-          text: 'OK',
-          onPress: () => router.push('/sign-in')
-        }
-      ]);
-    } else {
-      Alert.alert('Error', data.message);
+      if (data.success) {
+        await AsyncStorage.setItem('authToken', data.token);
+        Alert.alert('Success', data.message, [
+          {
+            text: 'OK',
+            onPress: () => router.push('/sign-in')
+          }
+        ]);
+      } else {
+        Alert.alert('Error', data.message);
+      }
+    } catch (error) {
+      console.error('Sign-up error:', error);
+      Alert.alert('Error', 'Network error. Make sure the server is running.');
+    } finally {
+      setSubmitting(false);
     }
-  } catch (error) {
-    console.error('Sign-up error:', error);
-    Alert.alert('Error', 'Network error. Make sure the server is running.');
-  } finally {
-    setSubmitting(false);
-  }
-};
-
+  };
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
-      
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Logo Section */}
-        {/* <View style={styles.logoContainer}>
-          <View style={styles.logoPlaceholder}>
-            <Text style={styles.logoText}>🌱</Text>
-          </View>
-          <Text style={styles.brandName}>FarmWise</Text>
-        </View> */}
 
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <Text style={styles.header}>Gumawa ng account</Text>
 
@@ -102,29 +98,56 @@ export default function SignUp() {
               {Object.keys(values).map((key) => (
                 <View key={key} style={styles.inputGroup}>
                   <Text style={styles.label}>{fieldLabels[key]}</Text>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      touched[key] && errors[key] && styles.inputError
-                    ]}
-                    placeholder={fieldPlaceholders[key]}
-                    placeholderTextColor="#a8b3a8"
-                    secureTextEntry={key === 'password'}
-                    value={values[key]}
-                    onChangeText={handleChange(key)}
-                    onBlur={handleBlur(key)}
-                    autoCapitalize={key === 'name' ? 'words' : 'none'}
-                    keyboardType={key === 'contactNumber' ? 'phone-pad' : 'default'}
-                    editable={!isSubmitting}
-                  />
+                  {key === 'password' ? ( // Special handling for password input
+                    <View style={[
+                        styles.passwordInputContainer,
+                        touched[key] && errors[key] && styles.inputError // Apply error border to container
+                    ]}>
+                      <TextInput
+                        style={styles.passwordTextInput} // Apply a specific style for password TextInput
+                        placeholder={fieldPlaceholders[key]}
+                        placeholderTextColor="#a8b3a8"
+                        secureTextEntry={!showPassword} // Toggle secureTextEntry based on showPassword state
+                        value={values[key]}
+                        onChangeText={handleChange(key)}
+                        onBlur={handleBlur(key)}
+                        editable={!isSubmitting}
+                      />
+                      <TouchableOpacity
+                        onPress={() => setShowPassword(!showPassword)} // Toggle showPassword state
+                        style={styles.passwordToggle}
+                      >
+                        <MaterialCommunityIcons
+                          name={showPassword ? 'eye-off' : 'eye'} // Change icon based on showPassword
+                          size={24}
+                          color="#a8b3a8"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  ) : ( // Regular input fields
+                    <TextInput
+                      style={[
+                        styles.input,
+                        touched[key] && errors[key] && styles.inputError
+                      ]}
+                      placeholder={fieldPlaceholders[key]}
+                      placeholderTextColor="#a8b3a8"
+                      value={values[key]}
+                      onChangeText={handleChange(key)}
+                      onBlur={handleBlur(key)}
+                      autoCapitalize={key === 'name' ? 'words' : 'none'}
+                      keyboardType={key === 'contactNumber' ? 'phone-pad' : 'default'}
+                      editable={!isSubmitting}
+                    />
+                  )}
                   {touched[key] && errors[key] && (
                     <Text style={styles.errorText}>{errors[key]}</Text>
                   )}
                 </View>
               ))}
 
-              <TouchableOpacity 
-                style={[styles.button, isSubmitting && styles.buttonDisabled]} 
+              <TouchableOpacity
+                style={[styles.button, isSubmitting && styles.buttonDisabled]}
                 onPress={handleSubmit}
                 activeOpacity={0.8}
                 disabled={isSubmitting}
@@ -134,15 +157,15 @@ export default function SignUp() {
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={[styles.button, { backgroundColor: '#6c757d', marginTop: 10 }]} 
+              <TouchableOpacity
+                style={[styles.button, { backgroundColor: '#6c757d', marginTop: 10 }]}
                 onPress={() => router.push('/mapping')}
               >
                 <Text style={styles.buttonText}>Skip to Mapping</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={[styles.button, { backgroundColor: '#6c757d', marginTop: 10 }]} 
+              <TouchableOpacity
+                style={[styles.button, { backgroundColor: '#6c757d', marginTop: 10 }]}
                 onPress={() => router.push('/dashboard')}
               >
                 <Text style={styles.buttonText}>Skip to Dashboard</Text>
@@ -154,8 +177,8 @@ export default function SignUp() {
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            May account ka na? 
-            <Text 
+            May account ka na?
+            <Text
               style={styles.linkText}
               onPress={() => router.push('/sign-in')}
             > Mag sign-in</Text>
@@ -227,6 +250,26 @@ const styles = StyleSheet.create({
     color: '#333333',
     borderWidth: 2,
     borderColor: '#87BE42',
+  },
+  // New styles for password visibility
+  passwordInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 56,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#87BE42',
+  },
+  passwordTextInput: {
+    flex: 1, // Allows the TextInput to take up available space
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: '#333333',
+    // No vertical padding needed here as the container handles the height
+  },
+  passwordToggle: {
+    paddingHorizontal: 15, // Add padding to the icon for better touch area
   },
   button: {
     height: 56,
