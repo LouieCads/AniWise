@@ -15,21 +15,24 @@ let loans = [];
 //   totalAmount, paidAmount, remainingAmount, progressPercentage, nextPaymentDate, monthlyPayment
 
 const submitLoanApplication = (userId, formData, userCreditLimit = 5000) => {
-  // crops: [{ name, price }]
-  const crops = formData.crops || [];
-  const totalAmount = crops.reduce((sum, crop) => sum + (crop.price || 0), 0);
-  if (totalAmount > userCreditLimit) {
+  // Accept cropName, quantity, pricePerUnit from formData
+  const cropName = formData.cropName;
+  const quantity = Number(formData.quantity) || 1;
+  const pricePerUnit = Number(formData.pricePerUnit) || 1500;
+  const totalPrice = quantity * pricePerUnit;
+  if (totalPrice > userCreditLimit) {
     return { error: "Loan exceeds your credit limit", code: 400 };
   }
   const newLoan = {
     id: loans.length + 1,
     userId,
-    crops,
-    totalAmount,
+    cropName,
+    quantity,
+    pricePerUnit,
+    totalPrice,
     ...formData,
-    // Default loan progress fields (can be updated later)
     paidAmount: 0,
-    remainingAmount: totalAmount,
+    remainingAmount: totalPrice,
     progressPercentage: 0,
     nextPaymentDate: "",
     monthlyPayment: 0,

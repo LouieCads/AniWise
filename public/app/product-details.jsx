@@ -32,8 +32,11 @@ const ProductDetailsPage = ({ route }) => {
     kita: '',
     dahilan: '',
   });
-  const [crops, setCrops] = useState([{ name: '', price: '' }]);
-  const [total, setTotal] = useState(0);
+  const [cropName, setCropName] = useState(route?.params?.cropName || '');
+  const [quantity, setQuantity] = useState(1);
+  const [pricePerUnit, setPricePerUnit] = useState(1500);
+  const [totalPrice, setTotalPrice] = useState(1500);
+  const [creditLimit, setCreditLimit] = useState(null);
 
   // Product data
   const productData = {
@@ -71,16 +74,19 @@ const ProductDetailsPage = ({ route }) => {
       kita: '',
       dahilan: '',
     });
-    setCrops([{ name: '', price: '' }]);
-    setTotal(0);
+    setCropName('');
+    setQuantity(1);
+    setPricePerUnit(1500);
+    setTotalPrice(1500);
+    setCreditLimit(null);
   };
 
   // Utility functions
   const getApiUrl = () => {
     if (__DEV__) {
-      return 'http://192.168.254.169:3000';
+      return 'http://192.168.100.134:3000';
     } else {
-      return 'https://192.168.254.169:3000';
+      return 'https://192.168.100.134:3000';
     }
   };
 
@@ -95,29 +101,46 @@ const ProductDetailsPage = ({ route }) => {
     }
   };
 
-  const handleCropChange = (index, field, value) => {
-    setCrops(prev => {
-      const updated = [...prev];
-      updated[index][field] = field === 'price' ? value.replace(/[^0-9.]/g, '') : value;
-      return updated;
-    });
-  };
-
-  const addCrop = () => setCrops(prev => [...prev, { name: '', price: '' }]);
-
-  const removeCrop = (index) => setCrops(prev => prev.length > 1 ? prev.filter((_, i) => i !== index) : prev);
-
   useEffect(() => {
-    setTotal(crops.reduce((sum, crop) => sum + (parseFloat(crop.price) || 0), 0));
-  }, [crops]);
+    setTotalPrice(quantity * pricePerUnit);
+  }, [quantity, pricePerUnit]);
+
+  // Fetch user profile and credit limit
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = await getAuthToken();
+        const response = await fetch(`${getApiUrl()}/api/profile`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (data.success && data.user) {
+          setLoanFormData(prev => ({
+            ...prev,
+            pangalan: data.user.name || '',
+            contactNumber: data.user.contactNumber || '',
+            address: data.user.location || '',
+          }));
+          setCreditLimit(data.user.creditLimit || 5000);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user profile:', error);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const handleSubmitLoan = async () => {
     if (!loanFormData.pangalan || !loanFormData.contactNumber || !loanFormData.address) {
       Alert.alert('Error', 'Pakiompleto ang lahat ng kinakailangang impormasyon.');
       return;
     }
-    if (crops.some(crop => !crop.name || !crop.price)) {
-      Alert.alert('Error', 'Paki-fill out ang lahat ng crops at presyo.');
+    if (!cropName || !quantity) {
+      Alert.alert('Error', 'Paki-fill out ang pangalan ng pananim at dami.');
+      return;
+    }
+    if (totalPrice > (creditLimit || 0)) {
+      Alert.alert('Loan exceeds your credit limit of ₱' + (creditLimit || 0));
       return;
     }
     try {
@@ -128,7 +151,13 @@ const ProductDetailsPage = ({ route }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ ...loanFormData, crops: crops.map(c => ({ name: c.name, price: parseFloat(c.price) })), total }),
+        body: JSON.stringify({
+          ...loanFormData,
+          cropName,
+          quantity,
+          pricePerUnit,
+          totalPrice,
+        }),
       });
       const data = await response.json();
       if (!response.ok || !data.success) {
@@ -152,37 +181,6 @@ const ProductDetailsPage = ({ route }) => {
       Alert.alert('Error', 'May problema sa koneksyon. Pakitiyak na gumagana ang server.');
     }
   };
-
-  const updateFormData = (field, value) => {
-    setLoanFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  // Fetch user profile and autofill form fields
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const token = await getAuthToken();
-        const response = await fetch(`${getApiUrl()}/api/profile`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await response.json();
-        if (data.success && data.user) {
-          setLoanFormData(prev => ({
-            ...prev,
-            pangalan: data.user.name || '',
-            contactNumber: data.user.contactNumber || '',
-            address: data.user.location || '',
-          }));
-        }
-      } catch (error) {
-        console.error('Failed to fetch user profile:', error);
-      }
-    };
-    fetchProfile();
-  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -296,7 +294,7 @@ const ProductDetailsPage = ({ route }) => {
 
           <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
             <Text style={styles.modalSubtitle}>
-              Para sa {productData.name} ({selectedSize})
+              Para sa {cropName} (₱{pricePerUnit} bawat sako/kilo)
             </Text>
 
             <View style={styles.formContainer}>
@@ -305,7 +303,7 @@ const ProductDetailsPage = ({ route }) => {
                 <TextInput
                   style={[styles.textInput, styles.disabledInput]}
                   value={loanFormData.pangalan}
-                  onChangeText={(value) => updateFormData('pangalan', value)}
+                  onChangeText={(value) => setLoanFormData(prev => ({ ...prev, pangalan: value }))}
                   placeholder="Ilagay ang buong pangalan"
                   placeholderTextColor="#9ca3af"
                   editable={false}
@@ -317,7 +315,7 @@ const ProductDetailsPage = ({ route }) => {
                 <TextInput
                   style={[styles.textInput, styles.disabledInput]}
                   value={loanFormData.contactNumber}
-                  onChangeText={(value) => updateFormData('contactNumber', value)}
+                  onChangeText={(value) => setLoanFormData(prev => ({ ...prev, contactNumber: value }))}
                   placeholder="09XXXXXXXXX"
                   placeholderTextColor="#9ca3af"
                   keyboardType="phone-pad"
@@ -331,7 +329,7 @@ const ProductDetailsPage = ({ route }) => {
                 <TextInput
                   style={[styles.textInput, styles.textArea, styles.disabledInput]}
                   value={loanFormData.address}
-                  onChangeText={(value) => updateFormData('address', value)}
+                  onChangeText={(value) => setLoanFormData(prev => ({ ...prev, address: value }))}
                   placeholder="Ilagay ang kumpletong address"
                   placeholderTextColor="#9ca3af"
                   multiline={true}
@@ -345,7 +343,7 @@ const ProductDetailsPage = ({ route }) => {
                 <TextInput
                   style={styles.textInput}
                   value={loanFormData.edad}
-                  onChangeText={(value) => updateFormData('edad', value)}
+                  onChangeText={(value) => setLoanFormData(prev => ({ ...prev, edad: value }))}
                   placeholder="Ilagay ang edad"
                   placeholderTextColor="#9ca3af"
                   keyboardType="numeric"
@@ -357,7 +355,7 @@ const ProductDetailsPage = ({ route }) => {
                 <TextInput
                   style={styles.textInput}
                   value={loanFormData.trabaho}
-                  onChangeText={(value) => updateFormData('trabaho', value)}
+                  onChangeText={(value) => setLoanFormData(prev => ({ ...prev, trabaho: value }))}
                   placeholder="Anong trabaho ninyo?"
                   placeholderTextColor="#9ca3af"
                 />
@@ -368,7 +366,7 @@ const ProductDetailsPage = ({ route }) => {
                 <TextInput
                   style={styles.textInput}
                   value={loanFormData.kita}
-                  onChangeText={(value) => updateFormData('kita', value)}
+                  onChangeText={(value) => setLoanFormData(prev => ({ ...prev, kita: value }))}
                   placeholder="PHP 0.00"
                   placeholderTextColor="#9ca3af"
                   keyboardType="numeric"
@@ -380,7 +378,7 @@ const ProductDetailsPage = ({ route }) => {
                 <TextInput
                   style={[styles.textInput, styles.textArea]}
                   value={loanFormData.dahilan}
-                  onChangeText={(value) => updateFormData('dahilan', value)}
+                  onChangeText={(value) => setLoanFormData(prev => ({ ...prev, dahilan: value }))}
                   placeholder="Bakit kailangan ninyo ng loan?"
                   placeholderTextColor="#9ca3af"
                   multiline={true}
@@ -388,33 +386,44 @@ const ProductDetailsPage = ({ route }) => {
                 />
               </View>
 
-              <View style={{ marginVertical: 16 }}>
-                <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 8 }}>Mga Pananim at Presyo</Text>
-                {crops.map((crop, idx) => (
-                  <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                    <TextInput
-                      style={[styles.textInput, { flex: 2, marginRight: 8 }]}
-                      placeholder="Pangalan ng pananim"
-                      value={crop.name}
-                      onChangeText={v => handleCropChange(idx, 'name', v)}
-                    />
-                    <TextInput
-                      style={[styles.textInput, { flex: 1, marginRight: 8 }]}
-                      placeholder="Presyo"
-                      value={crop.price}
-                      onChangeText={v => handleCropChange(idx, 'price', v)}
-                      keyboardType="numeric"
-                    />
-                    <TouchableOpacity onPress={() => removeCrop(idx)}>
-                      <Icon name="remove-circle" size={24} color="#ef4444" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-                <TouchableOpacity onPress={addCrop} style={{ marginTop: 4, alignSelf: 'flex-start' }}>
-                  <Text style={{ color: '#10b981', fontWeight: 'bold' }}>+ Magdagdag ng pananim</Text>
-                </TouchableOpacity>
-                <Text style={{ marginTop: 8, fontWeight: 'bold' }}>Kabuuang Halaga: ₱{total.toLocaleString()}</Text>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Pangalan ng Pananim *</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={cropName}
+                  onChangeText={setCropName}
+                  placeholder="Pangalan ng pananim"
+                  placeholderTextColor="#9ca3af"
+                />
               </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Dami (kilo/sako) *</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={quantity.toString()}
+                  onChangeText={v => setQuantity(Number(v.replace(/[^0-9]/g, '')) || 1)}
+                  placeholder="1"
+                  placeholderTextColor="#9ca3af"
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Presyo bawat kilo/sako</Text>
+                <Text style={styles.textInput} editable={false}>₱{pricePerUnit}</Text>
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Kabuuang Halaga</Text>
+                <Text style={styles.textInput} editable={false}>₱{totalPrice.toLocaleString()}</Text>
+              </View>
+
+              {creditLimit !== null && (
+                <Text style={{ color: '#888', marginBottom: 10 }}>
+                  Credit Limit: ₱{creditLimit.toLocaleString()}
+                </Text>
+              )}
 
               <Text style={styles.requiredNote}>
                 * Mga kinakailangang impormasyon

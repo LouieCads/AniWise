@@ -14,6 +14,8 @@ const createUser = (userData) => {
     id: users.length + 1,
     creditLimit:
       userData.creditLimit !== undefined ? userData.creditLimit : 5000, // Default credit limit
+    creditScore:
+      userData.creditScore !== undefined ? userData.creditScore : null, // Default credit score
     ...userData,
     createdAt: new Date().toISOString(),
   };

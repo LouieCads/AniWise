@@ -40,7 +40,7 @@ const WeatherPage = () => {
         return;
       }
       // Fetch user's farms
-      const farmRes = await fetch('http://192.168.254.169:3000/api/farms/my', {
+      const farmRes = await fetch('http://192.168.100.134/api/farms/my', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const farmData = await farmRes.json();
