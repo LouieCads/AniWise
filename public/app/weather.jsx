@@ -15,11 +15,6 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Using Ma
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const WEATHER_API_KEY = process.env.OPENWEATHER_API_KEY || '98bb67c7b4f0e326ccdfebd2e15577f3'; // Replace with your actual API key
-const CITY_NAME = 'Silang'; // Specify the city
-const LATITUDE = 14.2384; // Latitude for Silang, Calabarzon, Philippines
-const LONGITUDE = 120.9757; // Longitude for Silang, Calabarzon, Philippines
-
 const WeatherPage = () => {
   const [currentWeather, setCurrentWeather] = useState(null);
   const [forecast, setForecast] = useState([]);
@@ -40,7 +35,7 @@ const WeatherPage = () => {
         return;
       }
       // Fetch user's farms
-      const farmRes = await fetch('http://192.168.100.134/api/farms/my', {
+      const farmRes = await fetch('http://192.168.100.134:3000/api/farms/my', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const farmData = await farmRes.json();
@@ -101,7 +96,7 @@ const WeatherPage = () => {
 
   const getFullDate = (timestamp) => {
     const date = new Date(timestamp * 1000); // Convert seconds to milliseconds
-    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });  
   };
 
   if (loading) {
@@ -117,7 +112,7 @@ const WeatherPage = () => {
     return (
       <SafeAreaView style={styles.errorContainer}>
         <Icon name="alert-circle-outline" size={50} color="#ef4444" />
-        <Text style={styles.errorText}>Walang datos ng panahon sa iyong bukid. Subukang muli mamaya.</Text>
+        <Text style={styles.errorText}>Walang datos ng panahon sa inyong bukid. Subukang muli mamaya.</Text>
         <TouchableOpacity onPress={fetchWeatherData} style={styles.retryButton}>
           <Text style={styles.retryButtonText}>Subukang Muli</Text>
         </TouchableOpacity>
@@ -153,30 +148,48 @@ const WeatherPage = () => {
           <View style={styles.currentWeatherMain}>
             <Icon name={getWeatherIcon(currentWeather.weather && currentWeather.weather[0]?.icon)} size={90} color="#10b981" />
             <View style={styles.currentWeatherTempContainer}>
-              <Text style={styles.currentTemperature}>{currentWeather.main && currentWeather.main.temp !== undefined ? Math.round(currentWeather.main.temp) : '--'}°C</Text>
-              <Text style={styles.weatherDescription}>{currentWeather.weather && currentWeather.weather[0]?.description ? currentWeather.weather[0].description.charAt(0).toUpperCase() + currentWeather.weather[0].description.slice(1) : ''}</Text>
+              <Text style={styles.currentTemperature}>
+                {currentWeather.main && currentWeather.main.temp !== undefined ? Math.round(currentWeather.main.temp) : '--'}°C
+              </Text>
+              <Text style={styles.weatherDescription}>
+                {currentWeather.weather && currentWeather.weather[0]?.description 
+                  ? currentWeather.weather[0].description.charAt(0).toUpperCase() + currentWeather.weather[0].description.slice(1) 
+                  : 'N/A'}
+              </Text>
             </View>
           </View>
           <View style={styles.currentWeatherDetails}>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Temperatura:</Text>
-              <Text style={styles.detailValue}>{currentWeather.main && currentWeather.main.temp !== undefined ? Math.round(currentWeather.main.temp) + '°C' : '--'}</Text>
+              <Text style={styles.detailValue}>
+                {currentWeather.main && currentWeather.main.temp !== undefined ? Math.round(currentWeather.main.temp) + '°C' : '--'}
+              </Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Halumigmig:</Text>
-              <Text style={styles.detailValue}>{currentWeather.main && currentWeather.main.humidity !== undefined ? currentWeather.main.humidity + '%' : '--'}</Text>
+              <Text style={styles.detailValue}>
+                {currentWeather.main && currentWeather.main.humidity !== undefined ? currentWeather.main.humidity + '%' : '--'}
+              </Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Hangin:</Text>
-              <Text style={styles.detailValue}>{currentWeather.wind && currentWeather.wind.speed !== undefined ? currentWeather.wind.speed + ' m/s' : '--'}</Text>
+              <Text style={styles.detailValue}>
+                {currentWeather.wind && currentWeather.wind.speed !== undefined ? currentWeather.wind.speed + ' m/s' : '--'}
+              </Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Pakiramdam:</Text>
-              <Text style={styles.detailValue}>{currentWeather.main && currentWeather.main.feels_like !== undefined ? Math.round(currentWeather.main.feels_like) + '°C' : '--'}</Text>
+              <Text style={styles.detailValue}>
+                {currentWeather.main && currentWeather.main.feels_like !== undefined ? Math.round(currentWeather.main.feels_like) + '°C' : '--'}
+              </Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Kondisyon:</Text>
-              <Text style={styles.detailValue}>{currentWeather.weather && currentWeather.weather[0]?.description ? currentWeather.weather[0].description.charAt(0).toUpperCase() + currentWeather.weather[0].description.slice(1) : '--'}</Text>
+              <Text style={styles.detailValue}>
+                {currentWeather.weather && currentWeather.weather[0]?.description 
+                  ? currentWeather.weather[0].description.charAt(0).toUpperCase() + currentWeather.weather[0].description.slice(1) 
+                  : '--'}
+              </Text>
             </View>
           </View>
         </View>
@@ -192,8 +205,12 @@ const WeatherPage = () => {
             >
               <Text style={styles.forecastDay}>{getDayName(day.dt)}</Text>
               <Icon name={getWeatherIcon(day.weather && day.weather[0]?.icon)} size={40} color="#10b981" />
-              <Text style={styles.forecastTemp}>{day.temp && day.temp.day !== undefined ? Math.round(day.temp.day) : '--'}°C</Text>
-              <Text style={styles.forecastDescription}>{day.weather && day.weather[0]?.main}</Text>
+              <Text style={styles.forecastTemp}>
+                {day.temp && day.temp.day !== undefined ? Math.round(day.temp.day) : '--'}°C
+              </Text>
+              <Text style={styles.forecastDescription}>
+                {day.weather && day.weather[0]?.main ? day.weather[0].main : 'N/A'}
+              </Text>
             </LinearGradient>
           ))}
         </View>
@@ -216,15 +233,17 @@ const WeatherPage = () => {
             <Text style={styles.navLabel}>Calendar</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.homeButton} onPress={() => router.push('/dashboard')}>
-            <LinearGradient
-              colors={['#10b981', '#059669']}
-              style={styles.homeButtonGradient}
-            >
-              <Icon name="home" size={28} color="#ffffff" />
-            </LinearGradient>
+            <View>
+              <LinearGradient
+                colors={['#10b981', '#059669']}
+                style={styles.homeButtonGradient}
+              >
+                <Icon name="home" size={28} color="#ffffff" />
+              </LinearGradient>
+            </View>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navButton} onPress={() => router.push('/catalog')}>
-            <Icon name="cart" size={24} color="#6b7280" />
+            <Icon name="cash-multiple" size={24} color="#6b7280" />
             <Text style={styles.navLabel}>Loan</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navButton} onPress={() => router.push('/journal')}>
@@ -398,7 +417,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   forecastDay: {
-    fontSize: 1,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#334155',
     marginBottom: 4,

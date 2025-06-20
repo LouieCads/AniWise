@@ -123,7 +123,7 @@ const Journal = () => {
             </LinearGradient>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navButton} onPress={navigateToShop}>
-            <Icon name="shopping-cart" size={24} color="#6b7280" />
+            <Icon name="payments" size={24} color="#6b7280" />
             <Text style={styles.navLabel}>Loan</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.navButton, styles.activeNavButton]} onPress={navigateToJournal}>
