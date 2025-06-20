@@ -155,6 +155,22 @@ const CatalogPage = () => {
           </TouchableOpacity>
         </View>
 
+        {/* --- Product Repayment and Loans Buttons --- */}
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 12 }}>
+          <TouchableOpacity
+            style={styles.repaymentButton}
+            onPress={() => router.push('/product-repayment')}
+          >
+            <Text style={styles.repaymentButtonText}>Repayment</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.loansButton}
+            onPress={() => router.push('/loans')}
+          >
+            <Text style={styles.loansButtonText}>Mga Loans</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* --- Shop By Category Section --- */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -288,17 +304,20 @@ const CatalogPage = () => {
                 {loans.map((loan, idx) => (
                   <View key={loan.id || idx} style={styles.loanItem}>
                     <View style={styles.loanHeader}>
-                      <Text style={styles.loanAmount}>₱{loan.totalAmount || 'N/A'}</Text>
-                      <Text style={[styles.loanStatus, { color: statusColors[loan.status] || '#888' }]}>
+                      <Text style={styles.loanAmount}>₱{loan.totalPrice != null ? loan.totalPrice : (loan.totalAmount || 'N/A')}</Text>
+                      <Text style={[styles.loanStatus, { color: statusColors[loan.status] || '#888' }]}> 
                         {loan.status}
                       </Text>
                     </View>
-                    <Text style={styles.loanDate}>
-                      {loan.createdAt ? new Date(loan.createdAt).toLocaleDateString() : ''}
-                    </Text>
-                    {loan.dahilan ? (
-                      <Text style={styles.loanPurpose}>Purpose: {loan.dahilan}</Text>
+                    {loan.cropName ? (
+                      <Text style={styles.loanPurpose}>{loan.cropName}</Text>
                     ) : null}
+                    {loan.cropName ? (
+                      <Text style={styles.loanQuantity}>{loan.quantity}</Text>
+                    ) : null}
+                    <Text style={styles.loanDate}>
+                      {loan.createdAt ? new Date(loan.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : ''}
+                    </Text>
                   </View>
                 ))}
               </ScrollView>
@@ -328,7 +347,7 @@ const styles = StyleSheet.create({
   searchHeader: {
     flexDirection: 'row',
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 43,
     paddingBottom: 8,
     alignItems: 'center',
     gap: 12,
@@ -580,19 +599,24 @@ const styles = StyleSheet.create({
   loanAmount: {
     fontWeight: 'bold',
     fontSize: 16,
+    marginTop: 2,
   },
   loanStatus: {
     fontWeight: 'bold',
   },
   loanDate: {
     color: '#666',
-    marginTop: 2,
     fontSize: 13,
   },
   loanPurpose: {
-    color: '#888',
     marginTop: 2,
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+  loanQuantity: {
+    color: '#888',
     fontSize: 13,
+    marginTop: 2,
   },
   loanAgainButton: {
     backgroundColor: '#10b981',
@@ -602,6 +626,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loanAgainButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  repaymentButton: {
+    backgroundColor: '#059669',
+    marginHorizontal: 0,
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    marginTop: 12
+  },
+  repaymentButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  loansButton: {
+    backgroundColor: '#2563eb',
+    marginHorizontal: 0,
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    marginTop: 12
+  },
+  loansButtonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,

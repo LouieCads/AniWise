@@ -137,7 +137,7 @@ const WeatherPage = () => {
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <Icon name="arrow-left" size={24} color="#ffffff" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Panahon ng Bukid</Text>
+            <Text style={styles.headerTitle}>Panahon</Text>
             <View style={{ width: 24 }} /> {/* Spacer for symmetry */}
           </View>
         </LinearGradient>
@@ -184,7 +184,7 @@ const WeatherPage = () => {
               </Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Kondisyon:</Text>
+              <Text style={styles.detailLabel}>Kondisyon:  </Text>
               <Text style={styles.detailValue}>
                 {currentWeather.weather && currentWeather.weather[0]?.description 
                   ? currentWeather.weather[0].description.charAt(0).toUpperCase() + currentWeather.weather[0].description.slice(1) 
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 40,
   },
   backButton: {
     padding: 8,
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   detailValue: {
-    fontSize: 22,
+    fontSize: 19,
     color: '#0f172a',
     fontWeight: 'bold',
   },
