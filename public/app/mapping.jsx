@@ -52,7 +52,7 @@ const CROP_RECOMMENDATIONS = {
     name: 'Palay (Rice)',
     tagalog: 'Palay',
     scientificName: 'Oryza sativa',
-    icon: 'grass', // Rice plant icon - grass represents rice stalks
+    icon: 'grass',
     conditions: {
       pH: { min: 5.5, max: 7.0, optimal: 6.5 },
       moisture: ['High', 'Medium'],
@@ -68,7 +68,7 @@ const CROP_RECOMMENDATIONS = {
     name: 'Mais (Corn)',
     tagalog: 'Mais',
     scientificName: 'Zea mays',
-    icon: 'agriculture', // Corn field icon
+    icon: 'agriculture',
     conditions: {
       pH: { min: 5.8, max: 7.5, optimal: 6.5 },
       moisture: ['Medium', 'Low'],
@@ -84,7 +84,7 @@ const CROP_RECOMMENDATIONS = {
     name: 'Gulay (Vegetables)',
     tagalog: 'Gulay',
     scientificName: 'Various',
-    icon: 'local-florist', // Vegetable garden icon
+    icon: 'local-florist',
     conditions: {
       pH: { min: 6.0, max: 7.5, optimal: 6.8 },
       moisture: ['Medium'],
@@ -100,7 +100,7 @@ const CROP_RECOMMENDATIONS = {
     name: 'Tubo (Sugarcane)',
     tagalog: 'Tubo',
     scientificName: 'Saccharum officinarum',
-    icon: 'eco', // Sugarcane plant icon - eco represents tall grass-like plants
+    icon: 'eco',
     conditions: {
       pH: { min: 5.5, max: 8.0, optimal: 6.5 },
       moisture: ['High', 'Medium'],
@@ -116,7 +116,7 @@ const CROP_RECOMMENDATIONS = {
     name: 'Niyog (Coconut)',
     tagalog: 'Niyog',
     scientificName: 'Cocos nucifera',
-    icon: 'park', // Coconut tree icon - park represents trees
+    icon: 'park',
     conditions: {
       pH: { min: 5.0, max: 8.0, optimal: 6.5 },
       moisture: ['High', 'Medium'],
@@ -132,7 +132,7 @@ const CROP_RECOMMENDATIONS = {
     name: 'Kape (Coffee)',
     tagalog: 'Kape',
     scientificName: 'Coffea spp.',
-    icon: 'local-cafe', // Coffee plant icon
+    icon: 'local-cafe',
     conditions: {
       pH: { min: 5.5, max: 6.5, optimal: 6.0 },
       moisture: ['Medium'],
@@ -143,6 +143,38 @@ const CROP_RECOMMENDATIONS = {
     description: 'High-value crop para sa upland areas. Kailangan ng cool na panahon.',
     benefits: ['High market value', 'Shade tolerant', 'Sustainable'],
     careTips: ['Shade management', 'Pruning', 'Quality processing']
+  },
+  banana: {
+    name: 'Saging (Banana)',
+    tagalog: 'Saging',
+    scientificName: 'Musa spp.',
+    icon: 'spa', // Leafy icon to represent banana leaves
+    conditions: {
+      pH: { min: 5.5, max: 7.0, optimal: 6.0 },
+      moisture: ['High'],
+      temperature: { min: 26, max: 30, optimal: 28 },
+      soilType: ['Loam', 'Sandy Loam'],
+      season: ['All year']
+    },
+    description: 'Main fruit export ng Pilipinas. Kailangan ng moist na lupa at mainit na klima.',
+    benefits: ['Export quality', 'Fast growing', 'Nutritious fruit'],
+    careTips: ['Wind protection', 'Fertilizer use', 'Regular harvesting']
+  },
+  mango: {
+    name: 'Mangga (Mango)',
+    tagalog: 'Mangga',
+    scientificName: 'Mangifera indica',
+    icon: 'emoji-nature', // Nature-themed icon
+    conditions: {
+      pH: { min: 5.5, max: 7.5, optimal: 6.5 },
+      moisture: ['Medium', 'Low'],
+      temperature: { min: 24, max: 30, optimal: 27 },
+      soilType: ['Loam', 'Sandy'],
+      season: ['Dry']
+    },
+    description: 'National fruit. Mabenta sa lokal at internasyonal na market.',
+    benefits: ['Sweet flavor', 'High market demand', 'Long shelf life'],
+    careTips: ['Proper pruning', 'Sunlight exposure', 'Pest and disease control']
   }
 };
 

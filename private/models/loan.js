@@ -14,22 +14,29 @@ let loans = [];
 // Plus loan progress fields:
 //   totalAmount, paidAmount, remainingAmount, progressPercentage, nextPaymentDate, monthlyPayment
 
-const submitLoanApplication = (userId, formData) => {
-  // Only allow one loan application per user for now
-  if (loans.some((loan) => loan.userId === userId)) {
-    return null; // Already exists
+const submitLoanApplication = (userId, formData, userCreditLimit = 5000) => {
+  // Accept cropName, quantity, pricePerUnit from formData
+  const cropName = formData.cropName;
+  const quantity = Number(formData.quantity) || 1;
+  const pricePerUnit = Number(formData.pricePerUnit) || 1500;
+  const totalPrice = quantity * pricePerUnit;
+  if (totalPrice > userCreditLimit) {
+    return { error: "Loan exceeds your credit limit", code: 400 };
   }
   const newLoan = {
     id: loans.length + 1,
     userId,
+    cropName,
+    quantity,
+    pricePerUnit,
+    totalPrice,
     ...formData,
-    // Default loan progress fields (can be updated later)
-    totalAmount: 0,
     paidAmount: 0,
-    remainingAmount: 0,
+    remainingAmount: totalPrice,
     progressPercentage: 0,
     nextPaymentDate: "",
     monthlyPayment: 0,
+    status: "Pending",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     hasLoan: true,
@@ -38,26 +45,37 @@ const submitLoanApplication = (userId, formData) => {
   return newLoan;
 };
 
+const getLoansByUserId = (userId) => {
+  return loans.filter((loan) => loan.userId === userId);
+};
+
 const getLoanByUserId = (userId) => {
+  // Deprecated: use getLoansByUserId for multiple loans
   return loans.find((loan) => loan.userId === userId) || null;
 };
 
 const updateLoanByUserId = (userId, updateData) => {
-  const loanIndex = loans.findIndex((loan) => loan.userId === userId);
-  if (loanIndex === -1) return null;
-  loans[loanIndex] = {
-    ...loans[loanIndex],
+  // Update the most recent loan for the user
+  const userLoans = loans.filter((loan) => loan.userId === userId);
+  if (userLoans.length === 0) return null;
+  // Update the latest loan (by createdAt)
+  const latestLoanIndex = loans.findIndex(
+    (loan) => loan.id === userLoans[userLoans.length - 1].id
+  );
+  loans[latestLoanIndex] = {
+    ...loans[latestLoanIndex],
     ...updateData,
     updatedAt: new Date().toISOString(),
   };
-  return loans[loanIndex];
+  return loans[latestLoanIndex];
 };
 
 const getAllLoans = () => loans;
 
 module.exports = {
   submitLoanApplication,
-  getLoanByUserId,
+  getLoanByUserId, // deprecated
+  getLoansByUserId,
   updateLoanByUserId,
   getAllLoans,
 };

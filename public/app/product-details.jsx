@@ -16,8 +16,19 @@ import {
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Picker } from '@react-native-picker/picker';
 
 const { width } = Dimensions.get('window');
+
+// List of crop names from catalog.jsx
+const cropOptions = [
+  'Palay',
+  'Moon Melon',
+  'Kamatis',
+  'Talong',
+  'Sili',
+  'Mais',
+];
 
 const ProductDetailsPage = ({ route }) => {
   // Modal state
@@ -32,6 +43,11 @@ const ProductDetailsPage = ({ route }) => {
     kita: '',
     dahilan: '',
   });
+  const [cropName, setCropName] = useState(route?.params?.cropName || '');
+  const [quantity, setQuantity] = useState(1);
+  const [pricePerUnit, setPricePerUnit] = useState(1500);
+  const [totalPrice, setTotalPrice] = useState(1500);
+  const [creditLimit, setCreditLimit] = useState(null);
 
   // Product data
   const productData = {
@@ -69,14 +85,19 @@ const ProductDetailsPage = ({ route }) => {
       kita: '',
       dahilan: '',
     });
+    setCropName('');
+    setQuantity(1);
+    setPricePerUnit(1500);
+    setTotalPrice(1500);
+    setCreditLimit(null);
   };
 
   // Utility functions
   const getApiUrl = () => {
     if (__DEV__) {
-      return 'http://192.168.100.2:3000';
+      return 'http://192.168.100.134:3000';
     } else {
-      return 'https://192.168.100.2:3000';
+      return 'https://192.168.100.134:3000';
     }
   };
 
@@ -91,53 +112,11 @@ const ProductDetailsPage = ({ route }) => {
     }
   };
 
-  const handleSubmitLoan = async () => {
-    if (!loanFormData.pangalan || !loanFormData.contactNumber || !loanFormData.address) {
-      Alert.alert('Error', 'Pakiompleto ang lahat ng kinakailangang impormasyon.');
-      return;
-    }
+  useEffect(() => {
+    setTotalPrice(quantity * pricePerUnit);
+  }, [quantity, pricePerUnit]);
 
-    try {
-      const token = await getAuthToken();
-      const response = await fetch(`${getApiUrl()}/api/loans`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(loanFormData),
-      });
-      const data = await response.json();
-      if (!response.ok || !data.success) {
-        Alert.alert('Error', data.message || 'Nabigo ang loan application.');
-        return;
-      }
-      Alert.alert(
-        'Salamat!',
-        'Ang inyong loan application ay naipadala na. Makakakuha kayo ng sagot sa loob ng 24 oras.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              handleCloseLoanModal();
-            },
-          },
-        ]
-      );
-    } catch (error) {
-      console.error('Loan application error:', error);
-      Alert.alert('Error', 'May problema sa koneksyon. Pakitiyak na gumagana ang server.');
-    }
-  };
-
-  const updateFormData = (field, value) => {
-    setLoanFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  // Fetch user profile and autofill form fields
+  // Fetch user profile and credit limit
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -153,6 +132,7 @@ const ProductDetailsPage = ({ route }) => {
             contactNumber: data.user.contactNumber || '',
             address: data.user.location || '',
           }));
+          setCreditLimit(data.user.creditLimit || 5000);
         }
       } catch (error) {
         console.error('Failed to fetch user profile:', error);
@@ -160,6 +140,72 @@ const ProductDetailsPage = ({ route }) => {
     };
     fetchProfile();
   }, []);
+
+  const handleSubmitLoan = async () => {
+    if (!loanFormData.pangalan || !loanFormData.contactNumber || !loanFormData.address) {
+      Alert.alert('Error', 'Pakiompleto ang lahat ng kinakailangang impormasyon.');
+      return;
+    }
+    if (!cropName || !quantity) {
+      Alert.alert('Error', 'Paki-fill out ang pangalan ng pananim at dami.');
+      return;
+    }
+    if (totalPrice > (creditLimit || 0)) {
+      Alert.alert('Loan exceeds your credit limit of ₱' + (creditLimit || 0));
+      return;
+    }
+    try {
+      const token = await getAuthToken();
+      const response = await fetch(`${getApiUrl()}/api/loans`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...loanFormData,
+          cropName,
+          quantity,
+          pricePerUnit,
+          totalPrice,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        Alert.alert('Error', data.message || 'Nabigo ang loan application.');
+        return;
+      }
+      Alert.alert(
+        'Salamat!',
+        'Ang inyong loan application ay naipadala na. Makakakuha kayo ng sagot sa loob ng 24 oras.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              handleCloseLoanModal();
+              router.push({
+                pathname: '/product-status',
+                params: {
+                  orderNumber: data.loan?.orderNumber || 'ORD-' + Date.now(),
+                  productName: cropName,
+                  quantity: quantity + ' ' + selectedSize,
+                  currentStatus: 0, // Start at processing
+                  estimatedDelivery: data.loan?.estimatedDelivery || 'Sa loob ng 2-3 araw',
+                  deliveryTime: data.loan?.deliveryTime || '2-3 araw',
+                  riderPhone: data.loan?.riderPhone || '0917-123-4567',
+                  totalPrice,
+                  pricePerUnit,
+                }
+              });
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Loan application error:', error);
+      Alert.alert('Error', 'May problema sa koneksyon. Pakitiyak na gumagana ang server.');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -290,7 +336,7 @@ const ProductDetailsPage = ({ route }) => {
 
           <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
             <Text style={styles.modalSubtitle}>
-              Para sa {productData.name} ({selectedSize})
+              Para sa {cropName} (₱{pricePerUnit} bawat sako/kilo)
             </Text>
 
             <View style={styles.formContainer}>
@@ -299,7 +345,7 @@ const ProductDetailsPage = ({ route }) => {
                 <TextInput
                   style={[styles.textInput, styles.disabledInput]}
                   value={loanFormData.pangalan}
-                  onChangeText={(value) => updateFormData('pangalan', value)}
+                  onChangeText={(value) => setLoanFormData(prev => ({ ...prev, pangalan: value }))}
                   placeholder="Ilagay ang buong pangalan"
                   placeholderTextColor="#9ca3af"
                   editable={false}
@@ -311,7 +357,7 @@ const ProductDetailsPage = ({ route }) => {
                 <TextInput
                   style={[styles.textInput, styles.disabledInput]}
                   value={loanFormData.contactNumber}
-                  onChangeText={(value) => updateFormData('contactNumber', value)}
+                  onChangeText={(value) => setLoanFormData(prev => ({ ...prev, contactNumber: value }))}
                   placeholder="09XXXXXXXXX"
                   placeholderTextColor="#9ca3af"
                   keyboardType="phone-pad"
@@ -325,7 +371,7 @@ const ProductDetailsPage = ({ route }) => {
                 <TextInput
                   style={[styles.textInput, styles.textArea, styles.disabledInput]}
                   value={loanFormData.address}
-                  onChangeText={(value) => updateFormData('address', value)}
+                  onChangeText={(value) => setLoanFormData(prev => ({ ...prev, address: value }))}
                   placeholder="Ilagay ang kumpletong address"
                   placeholderTextColor="#9ca3af"
                   multiline={true}
@@ -339,7 +385,7 @@ const ProductDetailsPage = ({ route }) => {
                 <TextInput
                   style={styles.textInput}
                   value={loanFormData.edad}
-                  onChangeText={(value) => updateFormData('edad', value)}
+                  onChangeText={(value) => setLoanFormData(prev => ({ ...prev, edad: value }))}
                   placeholder="Ilagay ang edad"
                   placeholderTextColor="#9ca3af"
                   keyboardType="numeric"
@@ -351,7 +397,7 @@ const ProductDetailsPage = ({ route }) => {
                 <TextInput
                   style={styles.textInput}
                   value={loanFormData.trabaho}
-                  onChangeText={(value) => updateFormData('trabaho', value)}
+                  onChangeText={(value) => setLoanFormData(prev => ({ ...prev, trabaho: value }))}
                   placeholder="Anong trabaho ninyo?"
                   placeholderTextColor="#9ca3af"
                 />
@@ -362,7 +408,7 @@ const ProductDetailsPage = ({ route }) => {
                 <TextInput
                   style={styles.textInput}
                   value={loanFormData.kita}
-                  onChangeText={(value) => updateFormData('kita', value)}
+                  onChangeText={(value) => setLoanFormData(prev => ({ ...prev, kita: value }))}
                   placeholder="PHP 0.00"
                   placeholderTextColor="#9ca3af"
                   keyboardType="numeric"
@@ -374,13 +420,58 @@ const ProductDetailsPage = ({ route }) => {
                 <TextInput
                   style={[styles.textInput, styles.textArea]}
                   value={loanFormData.dahilan}
-                  onChangeText={(value) => updateFormData('dahilan', value)}
+                  onChangeText={(value) => setLoanFormData(prev => ({ ...prev, dahilan: value }))}
                   placeholder="Bakit kailangan ninyo ng loan?"
                   placeholderTextColor="#9ca3af"
                   multiline={true}
                   numberOfLines={3}
                 />
               </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Pangalan ng Pananim *</Text>
+                {/* Dropdown for crop selection */}
+                <View style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, overflow: 'hidden', backgroundColor: '#fff' }}>
+                  <Picker
+                    selectedValue={cropName}
+                    onValueChange={setCropName}
+                    style={{ height: 55, width: '100%' }}
+                  >
+                    <Picker.Item label="Pumili ng pananim" value="" />
+                    {cropOptions.map((crop) => (
+                      <Picker.Item key={crop} label={crop} value={crop} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Dami (kilo/sako) *</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={quantity.toString()}
+                  onChangeText={v => setQuantity(Number(v.replace(/[^0-9]/g, '')) || '')}
+                  placeholder="1"
+                  placeholderTextColor="#9ca3af"
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Presyo bawat kilo/sako</Text>
+                <Text style={styles.textInput} editable={false}>₱{pricePerUnit}</Text>
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Kabuuang Halaga</Text>
+                <Text style={styles.textInput} editable={false}>₱{totalPrice.toLocaleString()}</Text>
+              </View>
+
+              {creditLimit !== null && (
+                <Text style={{ color: '#888', marginBottom: 10 }}>
+                  Credit Limit: ₱{creditLimit.toLocaleString()}
+                </Text>
+              )}
 
               <Text style={styles.requiredNote}>
                 * Mga kinakailangang impormasyon
@@ -684,6 +775,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#ffffff',
     textAlign: 'center',
+  },
+  statusContainer: {
+    margin: 16,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 1,
   },
 });
 

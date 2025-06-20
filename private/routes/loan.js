@@ -6,8 +6,10 @@ const {
   getLoanByUserId,
   updateLoanByUserId,
   getAllLoans,
+  getLoansByUserId,
 } = require("../models/loan");
 const config = require("../config/config");
+const { findUserById } = require("../models/user");
 let twilioClient = null;
 if (config.TWILIO_ACCOUNT_SID && config.TWILIO_AUTH_TOKEN) {
   twilioClient = require("twilio")(
@@ -20,6 +22,9 @@ if (config.TWILIO_ACCOUNT_SID && config.TWILIO_AUTH_TOKEN) {
 router.post("/loans", authenticateToken, async (req, res) => {
   const userId = req.user.userId;
   const formData = req.body;
+  const user = findUserById(userId);
+  const userCreditLimit =
+    user && user.creditLimit !== undefined ? user.creditLimit : 5000;
   if (getLoanByUserId(userId)) {
     return res.status(409).json({
       success: false,
@@ -27,7 +32,14 @@ router.post("/loans", authenticateToken, async (req, res) => {
       hasLoan: true,
     });
   }
-  const newLoan = submitLoanApplication(userId, formData);
+  const newLoan = submitLoanApplication(userId, formData, userCreditLimit);
+  if (newLoan && newLoan.error && newLoan.code === 400) {
+    return res.status(400).json({
+      success: false,
+      message: newLoan.error,
+      hasLoan: false,
+    });
+  }
   if (!newLoan) {
     return res.status(500).json({
       success: false,
@@ -85,6 +97,7 @@ router.get("/loans/my", authenticateToken, (req, res) => {
 });
 
 // Update current user's loan info (protected)
+// You can update status by sending { status: 'Approved' } or { status: 'Paid' } in the body
 router.put("/loans/my", authenticateToken, (req, res) => {
   const userId = req.user.userId;
   const updateData = req.body;
@@ -110,6 +123,17 @@ router.get("/loans", (req, res) => {
     success: true,
     loans: getAllLoans(),
     count: getAllLoans().length,
+  });
+});
+
+// Get all loans for the current user (protected)
+router.get("/loans/my/all", authenticateToken, (req, res) => {
+  const userId = req.user.userId;
+  const loans = getLoansByUserId(userId);
+  res.json({
+    success: true,
+    loans,
+    count: loans.length,
   });
 });
 

@@ -29,4 +29,24 @@ router.get("/users", (req, res) => {
   });
 });
 
+// Update user credit score and credit limit (protected route)
+router.put("/profile/credit", authenticateToken, (req, res) => {
+  const user = findUserById(req.user.userId);
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: "User not found",
+    });
+  }
+  const { creditScore, creditLimit } = req.body;
+  if (typeof creditScore !== "undefined") user.creditScore = creditScore;
+  if (typeof creditLimit !== "undefined") user.creditLimit = creditLimit;
+  const { password: _, ...userWithoutPassword } = user;
+  res.json({
+    success: true,
+    user: userWithoutPassword,
+    message: "Credit info updated successfully.",
+  });
+});
+
 module.exports = router;

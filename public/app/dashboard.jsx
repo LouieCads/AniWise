@@ -92,13 +92,13 @@ const Dashboard = () => {
           return;
         }
         // Fetch user profile (for greeting)
-        const profileRes = await fetch('http://192.168.100.2:3000/api/profile', {
+        const profileRes = await fetch('http://192.168.100.134:3000/api/profile', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const profileData = await profileRes.json();
         if (profileData.success) setUser(profileData.user);
         // Fetch user's farms
-        const farmRes = await fetch('http://192.168.100.2:3000/api/farms/my', {
+        const farmRes = await fetch('http://192.168.100.134:3000/api/farms/my', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const farmData = await farmRes.json();
@@ -149,6 +149,32 @@ const Dashboard = () => {
     };
     fetchData();
   }, []);
+
+  // Send credit score/limit to backend if they change
+  useEffect(() => {
+    const sendCreditInfo = async () => {
+      if (credibilityScore === null || loanableAmount === null) return;
+      try {
+        const token = await AsyncStorage.getItem('authToken');
+        if (!token) return;
+        await fetch('http://192.168.100.134:3000/api/profile/credit', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            creditScore: credibilityScore,
+            creditLimit: loanableAmount
+          })
+        });
+      } catch (err) {
+        // Optionally show an alert or log
+        // Alert.alert('Error', 'Failed to sync credit info');
+      }
+    };
+    sendCreditInfo();
+  }, [credibilityScore, loanableAmount]);
 
   const handleLogout = () => {
     Alert.alert(
@@ -212,9 +238,9 @@ const Dashboard = () => {
               </View>
               <View style={styles.headerText}>
                 <Text style={styles.greeting}>
-                  Hello, {loading ? '...' : user?.name?.split(' ')[0] || 'User'}! 👋
+                  Hello, {loading ? '...' : user?.name?.split(' ')[0] || 'User'}!
                 </Text>
-                <Text style={styles.subtitle}>Ready to grow today?</Text>
+                <Text style={styles.subtitle}>Magandang araw!</Text>
               </View>
             </View>
             <View style={styles.headerRight}>
@@ -431,10 +457,10 @@ const Dashboard = () => {
           </TouchableOpacity>
           <TouchableOpacity style={styles.navButton} onPress={() => router.push('/catalog')}>
             <Icon name="shopping-cart" size={24} color="#6b7280" />
-            <Text style={styles.navLabel} onPress={() => router.push('/catalog')}>Shop</Text>
+            <Text style={styles.navLabel} onPress={() => router.push('/catalog')}>Loan</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navButton} onPress={() => router.push('/journal')}>
-            <Icon name="notifications" size={24} color="#6b7280" />
+            <Icon name="book" size={24} color="#6b7280" />
             <Text style={styles.navLabel}>Journal</Text>
           </TouchableOpacity>
         </LinearGradient>

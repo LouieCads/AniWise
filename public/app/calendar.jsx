@@ -220,7 +220,7 @@ const Calendar = () => {
             <Text style={styles.navLabel}>Shop</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navButton} onPress={navigateToAlerts}>
-            <Icon name="notifications" size={24} color="#6b7280" />
+            <Icon name="book" size={24} color="#6b7280" />
             <Text style={styles.navLabel}>Journal</Text>
           </TouchableOpacity>
         </LinearGradient>
