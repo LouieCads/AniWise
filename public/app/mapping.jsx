@@ -1087,14 +1087,14 @@ export default function Mapping() {
                     )}
                   </View>
 
-                  <View style={styles.weatherInfoModal}>
+                  {/* <View style={styles.weatherInfoModal}>
                     <Text style={styles.weatherDescriptionModal}>
                       Kasalukuyang Panahon: {soilData.description} • <Text style={{ color: getTemperatureIndicator(parseFloat(soilData.airTemp)).color }}>{soilData.airTemp}°C ({getTemperatureIndicator(parseFloat(soilData.airTemp)).text})</Text> • {soilData.humidity}% humidity
                     </Text>
                     <Text style={styles.weatherDescriptionModal}>
                       Lakas ng Hangin: {soilData.windSpeed} m/s • Presyon: {soilData.pressure} hPa
                     </Text>
-                  </View>
+                  </View> */}
 
                   {/* "Choose this Farm" Button */}
                   <TouchableOpacity
