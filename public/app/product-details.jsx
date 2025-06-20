@@ -32,6 +32,8 @@ const ProductDetailsPage = ({ route }) => {
     kita: '',
     dahilan: '',
   });
+  const [crops, setCrops] = useState([{ name: '', price: '' }]);
+  const [total, setTotal] = useState(0);
 
   // Product data
   const productData = {
@@ -69,6 +71,8 @@ const ProductDetailsPage = ({ route }) => {
       kita: '',
       dahilan: '',
     });
+    setCrops([{ name: '', price: '' }]);
+    setTotal(0);
   };
 
   // Utility functions
@@ -91,12 +95,31 @@ const ProductDetailsPage = ({ route }) => {
     }
   };
 
+  const handleCropChange = (index, field, value) => {
+    setCrops(prev => {
+      const updated = [...prev];
+      updated[index][field] = field === 'price' ? value.replace(/[^0-9.]/g, '') : value;
+      return updated;
+    });
+  };
+
+  const addCrop = () => setCrops(prev => [...prev, { name: '', price: '' }]);
+
+  const removeCrop = (index) => setCrops(prev => prev.length > 1 ? prev.filter((_, i) => i !== index) : prev);
+
+  useEffect(() => {
+    setTotal(crops.reduce((sum, crop) => sum + (parseFloat(crop.price) || 0), 0));
+  }, [crops]);
+
   const handleSubmitLoan = async () => {
     if (!loanFormData.pangalan || !loanFormData.contactNumber || !loanFormData.address) {
       Alert.alert('Error', 'Pakiompleto ang lahat ng kinakailangang impormasyon.');
       return;
     }
-
+    if (crops.some(crop => !crop.name || !crop.price)) {
+      Alert.alert('Error', 'Paki-fill out ang lahat ng crops at presyo.');
+      return;
+    }
     try {
       const token = await getAuthToken();
       const response = await fetch(`${getApiUrl()}/api/loans`, {
@@ -105,7 +128,7 @@ const ProductDetailsPage = ({ route }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(loanFormData),
+        body: JSON.stringify({ ...loanFormData, crops: crops.map(c => ({ name: c.name, price: parseFloat(c.price) })), total }),
       });
       const data = await response.json();
       if (!response.ok || !data.success) {
@@ -363,6 +386,34 @@ const ProductDetailsPage = ({ route }) => {
                   multiline={true}
                   numberOfLines={3}
                 />
+              </View>
+
+              <View style={{ marginVertical: 16 }}>
+                <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 8 }}>Mga Pananim at Presyo</Text>
+                {crops.map((crop, idx) => (
+                  <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <TextInput
+                      style={[styles.textInput, { flex: 2, marginRight: 8 }]}
+                      placeholder="Pangalan ng pananim"
+                      value={crop.name}
+                      onChangeText={v => handleCropChange(idx, 'name', v)}
+                    />
+                    <TextInput
+                      style={[styles.textInput, { flex: 1, marginRight: 8 }]}
+                      placeholder="Presyo"
+                      value={crop.price}
+                      onChangeText={v => handleCropChange(idx, 'price', v)}
+                      keyboardType="numeric"
+                    />
+                    <TouchableOpacity onPress={() => removeCrop(idx)}>
+                      <Icon name="remove-circle" size={24} color="#ef4444" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+                <TouchableOpacity onPress={addCrop} style={{ marginTop: 4, alignSelf: 'flex-start' }}>
+                  <Text style={{ color: '#10b981', fontWeight: 'bold' }}>+ Magdagdag ng pananim</Text>
+                </TouchableOpacity>
+                <Text style={{ marginTop: 8, fontWeight: 'bold' }}>Kabuuang Halaga: ₱{total.toLocaleString()}</Text>
               </View>
 
               <Text style={styles.requiredNote}>
@@ -643,6 +694,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#ffffff',
     textAlign: 'center',
+  },
+  statusContainer: {
+    margin: 16,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 1,
   },
 });
 

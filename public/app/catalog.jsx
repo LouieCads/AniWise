@@ -1,11 +1,12 @@
 import React from 'react';
 import {
   View, Text, ScrollView, StyleSheet, Image,
-  StatusBar, SafeAreaView, TouchableOpacity, TextInput
+  StatusBar, SafeAreaView, TouchableOpacity, TextInput, Modal, ActivityIndicator, Alert
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // --- Dummy Data ---
 // const categories = [
@@ -74,8 +75,73 @@ const productsData = [
   }
 ];
 
+const getApiUrl = () => {
+  if (__DEV__) {
+    return 'http://192.168.254.169:3000';
+  } else {
+    return 'https://192.168.254.169:3000';
+  }
+};
+
+const getAuthToken = async () => {
+  try {
+    const token = await AsyncStorage.getItem('authToken');
+    if (!token) throw new Error('No authentication token found');
+    return token;
+  } catch (error) {
+    console.error('Error getting authentication token:', error);
+    throw error;
+  }
+};
+
+const statusColors = {
+  'Pending': '#f59e42',
+  'Approved': '#10b981',
+  'Paid': '#22c55e',
+  'Unpaid': '#ef4444',
+  'Rejected': '#ef4444',
+};
+
 const CatalogPage = () => {
   const [activeCategory, setActiveCategory] = React.useState('all');
+  const [loanModalVisible, setLoanModalVisible] = React.useState(false);
+  const [loans, setLoans] = React.useState([]);
+  const [loadingLoans, setLoadingLoans] = React.useState(false);
+
+  const fetchLoans = async () => {
+    setLoadingLoans(true);
+    try {
+      const token = await getAuthToken();
+      const response = await fetch(`${getApiUrl()}/api/loans/my/all`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setLoans(data.loans);
+      } else {
+        setLoans([]);
+      }
+    } catch (error) {
+      setLoans([]);
+      Alert.alert('Error', 'Failed to fetch loans.');
+    } finally {
+      setLoadingLoans(false);
+    }
+  };
+
+  const openLoanModal = () => {
+    fetchLoans();
+    setLoanModalVisible(true);
+  };
+
+  const closeLoanModal = () => {
+    setLoanModalVisible(false);
+  };
+
+  const handleLoanAgain = () => {
+    setLoanModalVisible(false);
+    router.push('/product-details'); // Or a dedicated loan page if available
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -195,36 +261,81 @@ const CatalogPage = () => {
 
       {/* --- Original Bottom Navigation --- */}
       <View style={styles.bottomNavContainer}>
+        <LinearGradient
+          colors={['#ffffff', '#f8fafc']}
+          style={styles.bottomNav}
+        >
+          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/weather')}>
+            <Icon name="cloud" size={24} color="#6b7280" />
+            <Text style={styles.navLabel}>Weather</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/calendar')}>
+            <Icon name="calendar-today" size={24} color="#6b7280" />
+            <Text style={styles.navLabel}>Calendar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.homeButton} onPress={() => router.push('/dashboard')}>
             <LinearGradient
-            colors={['#ffffff', '#f8fafc']}
-            style={styles.bottomNav}
+              colors={['#10b981', '#059669']}
+              style={styles.homeButtonGradient}
             >
-            <TouchableOpacity style={styles.navButton} onPress={() => router.push('/weather')}>
-                <Icon name="cloud" size={24} color="#6b7280" />
-                <Text style={styles.navLabel}>Weather</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navButton} onPress={() => router.push('/calendar')}>
-                <Icon name="calendar-today" size={24} color="#6b7280" />
-                <Text style={styles.navLabel}>Calendar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.homeButton} onPress={() => router.push('/dashboard')}>
-                <LinearGradient
-                colors={['#10b981', '#059669']}
-                style={styles.homeButtonGradient}
-                >
-                <Icon name="home" size={28} color="#ffffff" />
-                </LinearGradient>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navButton} onPress={() => router.push('/catalog')}>
-                <Icon name="shopping-cart" size={24} color="#6b7280" />
-                <Text style={styles.navLabel} onPress={() => router.push('/catalog')}>Loan</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navButton} onPress={() => router.push('/journal')}>
-                <Icon name="book" size={24} color="#6b7280" />
-                <Text style={styles.navLabel}>Journal</Text>
-            </TouchableOpacity>
+              <Icon name="home" size={28} color="#ffffff" />
             </LinearGradient>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navButton} onPress={openLoanModal}>
+            <Icon name="payments" size={24} color="#6b7280" />
+            <Text style={styles.navLabel}>Loans</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/journal')}>
+            <Icon name="book" size={24} color="#6b7280" />
+            <Text style={styles.navLabel}>Journal</Text>
+          </TouchableOpacity>
+        </LinearGradient>
+      </View>
+
+      {/* --- Loan Modal --- */}
+      <Modal
+        visible={loanModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={closeLoanModal}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '80%' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderColor: '#f3f3f3' }}>
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#333' }}>My Loans</Text>
+              <TouchableOpacity onPress={closeLoanModal}>
+                <Icon name="close" size={24} color="#374151" />
+              </TouchableOpacity>
+            </View>
+            {loadingLoans ? (
+              <ActivityIndicator style={{ margin: 30 }} size="large" color="#10b981" />
+            ) : loans.length === 0 ? (
+              <View style={{ alignItems: 'center', margin: 30 }}>
+                <Text style={{ color: '#888', fontSize: 16 }}>No loans found.</Text>
+              </View>
+            ) : (
+              <ScrollView style={{ maxHeight: 350 }}>
+                {loans.map((loan, idx) => (
+                  <View key={loan.id || idx} style={{ padding: 16, borderBottomWidth: 1, borderColor: '#f3f3f3' }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ fontWeight: 'bold', fontSize: 16 }}>₱{loan.totalAmount || 'N/A'}</Text>
+                      <Text style={{ color: statusColors[loan.status] || '#888', fontWeight: 'bold' }}>{loan.status}</Text>
+                    </View>
+                    <Text style={{ color: '#666', marginTop: 2, fontSize: 13 }}>{loan.createdAt ? new Date(loan.createdAt).toLocaleDateString() : ''}</Text>
+                    {loan.dahilan ? <Text style={{ color: '#888', marginTop: 2, fontSize: 13 }}>Purpose: {loan.dahilan}</Text> : null}
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+            <TouchableOpacity
+              style={{ backgroundColor: '#10b981', margin: 20, borderRadius: 12, padding: 16, alignItems: 'center' }}
+              onPress={handleLoanAgain}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Loan Again</Text>
+            </TouchableOpacity>
+          </View>
         </View>
+      </Modal>
     </SafeAreaView>
   );
 };

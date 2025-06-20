@@ -12,6 +12,8 @@ const findUserById = (id) => {
 const createUser = (userData) => {
   const newUser = {
     id: users.length + 1,
+    creditLimit:
+      userData.creditLimit !== undefined ? userData.creditLimit : 5000, // Default credit limit
     ...userData,
     createdAt: new Date().toISOString(),
   };
@@ -30,5 +32,5 @@ module.exports = {
   findUserById,
   createUser,
   getAllUsers,
-  getUserCount
-}; 
+  getUserCount,
+};
