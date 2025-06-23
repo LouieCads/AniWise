@@ -92,7 +92,7 @@ const Dashboard = () => {
           return;
         }
         // Fetch user profile (for greeting)
-        const profileRes = await fetch('http://192.168.100.134:3000/api/profile', {
+        const profileRes = await fetch('http://192.168.100.2:3000/api/profile', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const profileData = await profileRes.json();
@@ -157,7 +157,7 @@ const Dashboard = () => {
       try {
         const token = await AsyncStorage.getItem('authToken');
         if (!token) return;
-        await fetch('http://192.168.100.134:3000/api/profile/credit', {
+        await fetch('http://192.168.100.2:3000/api/profile/credit', {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -253,50 +253,6 @@ const Dashboard = () => {
             </View>
           </View>
         </LinearGradient>
-
-        {/* Temperature and Date Cards */}
-        <View style={styles.cardRow}>
-          {/* Temperature Card */}
-          <LinearGradient
-            colors={['#ffffff', '#f8fafc']}
-            style={styles.temperatureCard}
-          >
-            <View style={styles.iconBackground}>
-              <Icon name="trending-up" size={28} color="#10b981" />
-            </View>
-            <Text style={styles.temperature}>
-              {weatherInfo && weatherInfo.main && typeof weatherInfo.main.temp !== 'undefined'
-                ? `${Math.round(weatherInfo.main.temp)}°C`
-                : '—'}
-            </Text>
-            <Text style={styles.time}>
-              {weatherInfo && weatherInfo.weather && weatherInfo.weather[0]
-                ? weatherInfo.weather[0].description.charAt(0).toUpperCase() + weatherInfo.weather[0].description.slice(1)
-                : 'Walang weather data'}
-            </Text>
-            <Text style={styles.time}>
-              {weatherInfo && weatherInfo.dt
-                ? new Date(weatherInfo.dt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                : ''}
-            </Text>
-            <View style={styles.cardAccent} />
-          </LinearGradient>
-
-          {/* Date Card */}
-          <LinearGradient
-            colors={['#ffffff', '#f8fafc']}
-            style={styles.dateCard}
-          >
-            <View style={styles.dateHeader}>
-              <Text style={styles.dateTitle}>Abr. 20-26</Text>
-              <Icon name="schedule" size={20} color="#10b981" />
-            </View>
-            <Text style={styles.dateDescription}>
-              ang pinakamainom na petsa para anihin ang inyong mga pananim.
-            </Text>
-            <View style={styles.cardAccent} />
-          </LinearGradient>
-        </View>
 
         {/* Credibility Score Card with Meter */}
         <View style={styles.credibilityCard}>
@@ -546,18 +502,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     gap: 16,
   },
-  temperatureCard: {
-    flex: 1,
-    borderRadius: 20,
-    padding: 15,
-    alignItems: 'center',
-    position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
-  },
+
   iconBackground: {
     width: 52,
     height: 52,

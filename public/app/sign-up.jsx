@@ -45,7 +45,7 @@ export default function SignUp() {
 
   const handleSignUp = async (values, { setSubmitting }) => {
     try {
-      const response = await fetch('http://192.168.100.134:3000/api/signup', {
+      const response = await fetch('http://192.168.100.2:3000/api/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -166,7 +166,7 @@ export default function SignUp() {
 
               <TouchableOpacity
                 style={[styles.button, { backgroundColor: '#6c757d', marginTop: 10 }]}
-                onPress={() => router.push('/dashboard')}
+                onPress={() => router.push('/tutorial')}
               >
                 <Text style={styles.buttonText}>Skip to Dashboard</Text>
               </TouchableOpacity>

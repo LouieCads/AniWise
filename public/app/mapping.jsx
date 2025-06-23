@@ -40,6 +40,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage'; // For sto
  * - Automatically redirects to sign-in if no token found
  * - Handles token expiration and network errors
  */
+const getConditionStyle = (condition) => {
+  switch (condition.toLowerCase()) {
+    case 'poor':
+      return { borderColor: '#dc2626', borderWidth: 2 }; // Red
+    case 'fair':
+      return { borderColor: '#f59e0b', borderWidth: 2 }; // Amber
+    case 'good':
+      return { borderColor: '#16a34a', borderWidth: 2 }; // Green
+    default:
+      return { borderColor: '#d1d5db', borderWidth: 1 }; // Default gray
+  }
+};
 
 const { width, height } = Dimensions.get('window');
 
@@ -537,7 +549,7 @@ export default function Mapping() {
                   onPress: () => {
                     // Navigate to a new screen or update state to show confirmed details
                     router.push({
-                      pathname: '/dashboard', // Assuming you have a route for confirmed farm details
+                      pathname: '/tutorial', // Assuming you have a route for confirmed farm details
                       params: {
                         farmAddress: currentSelectedAddress,
                         soilCondition: soilData.condition,
@@ -697,9 +709,9 @@ export default function Mapping() {
   // Function to get API URL based on environment
   const getApiUrl = () => {
     if (__DEV__) {
-      return 'http://192.168.137.35:3000'; // Local development server
+      return 'http://192.168.100.2:3000'; // Local development server
     } else {
-      return 'https://192.168.137.35:3000'; // Production server
+      return 'https://192.168.100.2:3000'; // Production server
     }
   };
 
@@ -777,14 +789,19 @@ export default function Mapping() {
       longitude
     } = params;
 
-    const getConditionColor = (condition) => {
-      switch (condition) {
-        case 'Good': return '#15803d';
-        case 'Fair': return '#f59e0b';
-        case 'Poor': return '#dc2626';
-        default: return '#6b7280';
+    const getConditionStyle = (condition) => {
+      switch (condition?.toLowerCase()) {
+        case 'poor':
+          return { borderColor: '#dc2626', borderWidth: 2 }; // Red
+        case 'fair':
+          return { borderColor: '#f59e0b', borderWidth: 2 }; // Orange
+        case 'good':
+          return { borderColor: '#16a34a', borderWidth: 2 }; // Green
+        default:
+          return { borderColor: '#d1d5db', borderWidth: 1 }; // Default gray
       }
     };
+
 
     const airTempIndicator = getTemperatureIndicator(parseFloat(airTemp));
     const soilTempIndicator = getTemperatureIndicator(parseFloat(soilTemperature));
@@ -997,12 +1014,7 @@ export default function Mapping() {
             )}
           </View>
 
-          <View style={styles.coordinatesContainer}>
-            <Text style={styles.coordinatesLabel}>Coordinates:</Text>
-            <Text style={styles.coordinatesText}>
-              {markerCoordinate.latitude.toFixed(6)}, {markerCoordinate.longitude.toFixed(6)}
-            </Text>
-          </View>
+          
         </View>
 
         {/* Bottom Spacer */}
@@ -1050,7 +1062,7 @@ export default function Mapping() {
               {soilData ? (
                 <>
                   <View style={styles.soilGridModal}>
-                    <View style={styles.soilCardModal}>
+                    <View style={[styles.soilCardModal, getConditionStyle(soilData.condition)]}>
                       <Icon name="thermostat" size={24} color={getTemperatureIndicator(parseFloat(soilData.temperature)).color} />
                       <Text style={styles.soilLabelModal}>Temperatura ng Lupa</Text>
                       <Text style={[styles.soilValueModal, { color: getTemperatureIndicator(parseFloat(soilData.temperature)).color }]}>
@@ -1058,13 +1070,14 @@ export default function Mapping() {
                       </Text>
                     </View>
 
-                    <View style={styles.soilCardModal}>
+                    <View style={[styles.soilCardModal, getConditionStyle(soilData.condition)]}>
                       <Icon name="water-drop" size={24} color="#3b82f6" />
                       <Text style={styles.soilLabelModal}>Moisture</Text>
                       <Text style={styles.soilValueModal}>{soilData.moisture}</Text>
                     </View>
 
-                    <View style={[styles.soilCardModal, { borderLeftColor: getSoilConditionColor(soilData.condition) }]}>
+
+                    <View style={[styles.soilCardModal, getConditionStyle(soilData.condition)]}>
                       <Icon name="check-circle" size={24} color={getSoilConditionColor(soilData.condition)} />
                       <Text style={styles.soilLabelModal}>Kondisyon</Text>
                       <Text style={[styles.soilValueModal, { color: getSoilConditionColor(soilData.condition) }]}>
@@ -1078,13 +1091,14 @@ export default function Mapping() {
                       <Text style={styles.soilValueModal}>{soilData.pH}</Text>
                     </View> */}
 
-                    {soilData.uvIndex !== undefined && ( // Check if uvIndex exists
-                      <View style={styles.soilCardModal}>
+                    {soilData.uvIndex !== undefined && (
+                      <View style={[styles.soilCardModal, getConditionStyle(soilData.condition)]}>
                         <Icon name="wb-sunny" size={24} color="#f59e0b" />
                         <Text style={styles.soilLabelModal}>UV Index</Text>
                         <Text style={styles.soilValueModal}>{soilData.uvIndex}</Text>
                       </View>
                     )}
+
                   </View>
 
                   {/* <View style={styles.weatherInfoModal}>
@@ -1178,26 +1192,6 @@ export default function Mapping() {
                       </View>
 
                       <Text style={styles.cropListDescription}>{crop.description}</Text>
-
-                      <View style={styles.cropListDetails}>
-                        <View style={styles.cropListDetailRow}>
-                          <View style={styles.cropListDetailItem}>
-                            <Icon name="star" size={14} color="#f59e0b" />
-                            <Text style={styles.cropListDetailLabel}>Score:</Text>
-                            <Text style={styles.cropListDetailValue}>{crop.score}/8</Text>
-                          </View>
-                          <View style={styles.cropListDetailItem}>
-                            <Icon name="science" size={14} color="#8b5cf6" />
-                            <Text style={styles.cropListDetailLabel}>pH:</Text>
-                            <Text style={styles.cropListDetailValue}>{crop.conditions.pH.min}-{crop.conditions.pH.max}</Text>
-                          </View>
-                          <View style={styles.cropListDetailItem}>
-                            <Icon name="thermostat" size={14} color="#dc2626" />
-                            <Text style={styles.cropListDetailLabel}>Temp:</Text>
-                            <Text style={styles.cropListDetailValue}>{crop.conditions.temperature.min}-{crop.conditions.temperature.max}°C</Text>
-                          </View>
-                        </View>
-                      </View>
 
                       <View style={styles.cropListBenefits}>
                         <Text style={styles.cropListBenefitsTitle}>Mga Benepisyo:</Text>
@@ -1727,7 +1721,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cropListName: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#374151',
     marginBottom: 2,
