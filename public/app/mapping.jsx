@@ -709,9 +709,9 @@ export default function Mapping() {
   // Function to get API URL based on environment
   const getApiUrl = () => {
     if (__DEV__) {
-      return 'http://192.168.100.2:3000'; // Local development server
+      return 'http://192.168.254.169:3000'; // Local development server
     } else {
-      return 'https://192.168.100.2:3000'; // Production server
+      return 'https://192.168.254.169:3000'; // Production server
     }
   };
 

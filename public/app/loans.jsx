@@ -6,9 +6,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const getApiUrl = () => {
   if (__DEV__) {
-    return 'http://192.168.100.134:3000';
+    return 'http://192.168.254.169:3000';
   } else {
-    return 'https://192.168.100.134:3000';
+    return 'https://192.168.254.169:3000';
   }
 };
 
