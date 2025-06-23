@@ -216,8 +216,8 @@ const Calendar = () => {
             </LinearGradient>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navButton} onPress={navigateToShop}>
-            <Icon name="shopping-cart" size={24} color="#6b7280" />
-            <Text style={styles.navLabel}>Shop</Text>
+            <Icon name="payments" size={24} color="#6b7280" />
+            <Text style={styles.navLabel}>Loan</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navButton} onPress={navigateToAlerts}>
             <Icon name="book" size={24} color="#6b7280" />
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 40,
   },
   header: {
     alignItems: 'center',

@@ -412,7 +412,7 @@ const Dashboard = () => {
             </LinearGradient>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navButton} onPress={() => router.push('/catalog')}>
-            <Icon name="shopping-cart" size={24} color="#6b7280" />
+            <Icon name="payments" size={24} color="#6b7280" />
             <Text style={styles.navLabel} onPress={() => router.push('/catalog')}>Loan</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navButton} onPress={() => router.push('/journal')}>
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 40,
   },
   headerLeft: {
     flexDirection: 'row',

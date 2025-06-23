@@ -123,7 +123,7 @@ const Journal = () => {
             </LinearGradient>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navButton} onPress={navigateToShop}>
-            <Icon name="shopping-cart" size={24} color="#6b7280" />
+            <Icon name="payments" size={24} color="#6b7280" />
             <Text style={styles.navLabel}>Loan</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.navButton, styles.activeNavButton]} onPress={navigateToJournal}>
@@ -282,21 +282,21 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: 20,
-    paddingBottom: 20, // Generous padding for bottom safe area
+    paddingBottom: 20,
     backgroundColor: 'transparent',
   },
   bottomNav: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 10, // Adjusted for more even spacing
+    paddingHorizontal: 20,
     paddingVertical: 16,
-    borderRadius: 28, // More rounded nav bar
+    borderRadius: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12, // Stronger shadow for floating effect
-    shadowRadius: 18,
-    elevation: 12, // Higher elevation
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
   },
   navButton: {
     alignItems: 'center',
@@ -322,16 +322,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   homeButtonGradient: {
-    width: 60, // Slightly larger home button
-    height: 60,
-    borderRadius: 30, // Fully round
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#10b981',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4, // More pronounced shadow
-    shadowRadius: 12,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
 });
 

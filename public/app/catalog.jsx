@@ -9,14 +9,6 @@ import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // --- Dummy Data ---
-// const categories = [
-//   { id: 'all', name: 'All', image: null },
-//   { id: 'plants', name: 'Pananim', image: null },
-//   { id: 'tools', name: 'Gamit', image: null },
-//   { id: 'fertilizers', name: 'Pataba', image: null },
-//   { id: 'pots', name: 'Paso', image: null },
-// ];
-
 const shopByCategories = [
   { id: 'women', name: 'Buto', image: 'https://images.unsplash.com/photo-1613500788522-89c4d55bdd0e?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
   { id: 'men', name: 'Materyales', image: 'https://plus.unsplash.com/premium_photo-1678677947273-47497a96ae1c?q=80&w=1471&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
@@ -140,7 +132,7 @@ const CatalogPage = () => {
 
   const handleLoanAgain = () => {
     setLoanModalVisible(false);
-    router.push('/product-details'); // Or a dedicated loan page if available
+    router.push('/product-details');
   };
 
   return (
@@ -159,35 +151,25 @@ const CatalogPage = () => {
             />
           </View>
           <TouchableOpacity style={styles.filterButton}>
-            <Icon name="tune" size={24} color="#808080" /> {/* Changed icon to 'tune' for filter */}
+            <Icon name="tune" size={24} color="#808080" />
           </TouchableOpacity>
         </View>
 
-        {/* --- Product Categories ---
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoryTabsScrollView}
-          contentContainerStyle={styles.categoryTabsContent}
-        >
-          {categories.map((category) => (
-            <TouchableOpacity
-              key={category.id}
-              style={[
-                styles.categoryTab,
-                activeCategory === category.id && styles.activeCategoryTab
-              ]}
-              onPress={() => setActiveCategory(category.id)}
-            >
-              <Text style={[
-                styles.categoryTabText,
-                activeCategory === category.id && styles.activeCategoryTabText
-              ]}>
-                {category.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView> */}
+        {/* --- Product Repayment and Loans Buttons --- */}
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 12 }}>
+          <TouchableOpacity
+            style={styles.repaymentButton}
+            onPress={() => router.push('/product-repayment')}
+          >
+            <Text style={styles.repaymentButtonText}>Repayment</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.loansButton}
+            onPress={() => router.push('/loans')}
+          >
+            <Text style={styles.loansButtonText}>Mga Loans</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* --- Shop By Category Section --- */}
         <View style={styles.section}>
@@ -211,7 +193,7 @@ const CatalogPage = () => {
           </ScrollView>
         </View>
 
-        {/* --- Curated For You (Replaced Mga Pananim) --- */}
+        {/* --- Curated For You --- */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Pinili para sa iyo</Text>
@@ -259,7 +241,7 @@ const CatalogPage = () => {
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
-      {/* --- Original Bottom Navigation --- */}
+      {/* --- Bottom Navigation --- */}
       <View style={styles.bottomNavContainer}>
         <LinearGradient
           colors={['#ffffff', '#f8fafc']}
@@ -274,16 +256,18 @@ const CatalogPage = () => {
             <Text style={styles.navLabel}>Calendar</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.homeButton} onPress={() => router.push('/dashboard')}>
-            <LinearGradient
-              colors={['#10b981', '#059669']}
-              style={styles.homeButtonGradient}
-            >
-              <Icon name="home" size={28} color="#ffffff" />
-            </LinearGradient>
+            <View>
+              <LinearGradient
+                colors={['#10b981', '#059669']}
+                style={styles.homeButtonGradient}
+              >
+                <Icon name="home" size={28} color="#ffffff" />
+              </LinearGradient>
+            </View>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navButton} onPress={openLoanModal}>
             <Icon name="payments" size={24} color="#6b7280" />
-            <Text style={styles.navLabel}>Loans</Text>
+            <Text style={styles.navLabel}>Loan</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navButton} onPress={() => router.push('/journal')}>
             <Icon name="book" size={24} color="#6b7280" />
@@ -299,39 +283,50 @@ const CatalogPage = () => {
         transparent={true}
         onRequestClose={closeLoanModal}
       >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '80%' }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderColor: '#f3f3f3' }}>
-              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#333' }}>My Loans</Text>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>My Loans</Text>
               <TouchableOpacity onPress={closeLoanModal}>
                 <Icon name="close" size={24} color="#374151" />
               </TouchableOpacity>
             </View>
             {loadingLoans ? (
-              <ActivityIndicator style={{ margin: 30 }} size="large" color="#10b981" />
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#10b981" />
+              </View>
             ) : loans.length === 0 ? (
-              <View style={{ alignItems: 'center', margin: 30 }}>
-                <Text style={{ color: '#888', fontSize: 16 }}>No loans found.</Text>
+              <View style={styles.emptyLoansContainer}>
+                <Text style={styles.emptyLoansText}>No loans found.</Text>
               </View>
             ) : (
-              <ScrollView style={{ maxHeight: 350 }}>
+              <ScrollView style={styles.loansScrollView}>
                 {loans.map((loan, idx) => (
-                  <View key={loan.id || idx} style={{ padding: 16, borderBottomWidth: 1, borderColor: '#f3f3f3' }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text style={{ fontWeight: 'bold', fontSize: 16 }}>₱{loan.totalAmount || 'N/A'}</Text>
-                      <Text style={{ color: statusColors[loan.status] || '#888', fontWeight: 'bold' }}>{loan.status}</Text>
+                  <View key={loan.id || idx} style={styles.loanItem}>
+                    <View style={styles.loanHeader}>
+                      <Text style={styles.loanAmount}>₱{loan.totalPrice != null ? loan.totalPrice : (loan.totalAmount || 'N/A')}</Text>
+                      <Text style={[styles.loanStatus, { color: statusColors[loan.status] || '#888' }]}> 
+                        {loan.status}
+                      </Text>
                     </View>
-                    <Text style={{ color: '#666', marginTop: 2, fontSize: 13 }}>{loan.createdAt ? new Date(loan.createdAt).toLocaleDateString() : ''}</Text>
-                    {loan.dahilan ? <Text style={{ color: '#888', marginTop: 2, fontSize: 13 }}>Purpose: {loan.dahilan}</Text> : null}
+                    {loan.cropName ? (
+                      <Text style={styles.loanPurpose}>{loan.cropName}</Text>
+                    ) : null}
+                    {loan.cropName ? (
+                      <Text style={styles.loanQuantity}>{loan.quantity}</Text>
+                    ) : null}
+                    <Text style={styles.loanDate}>
+                      {loan.createdAt ? new Date(loan.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : ''}
+                    </Text>
                   </View>
                 ))}
               </ScrollView>
             )}
             <TouchableOpacity
-              style={{ backgroundColor: '#10b981', margin: 20, borderRadius: 12, padding: 16, alignItems: 'center' }}
+              style={styles.loanAgainButton}
               onPress={handleLoanAgain}
             >
-              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Loan Again</Text>
+              <Text style={styles.loanAgainButtonText}>Loan Again</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -343,7 +338,7 @@ const CatalogPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F7F7', // Lighter background to match the image
+    backgroundColor: '#F7F7F7',
   },
   scrollView: {
     flex: 1,
@@ -352,8 +347,8 @@ const styles = StyleSheet.create({
   searchHeader: {
     flexDirection: 'row',
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8, // Reduced padding to make space for categories
+    paddingTop: 43,
+    paddingBottom: 8,
     alignItems: 'center',
     gap: 12,
   },
@@ -362,11 +357,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 25, // More rounded
+    borderRadius: 25,
     borderWidth: 1,
     borderColor: '#E0E0E0',
     paddingHorizontal: 16,
-    height: 50, // Fixed height
+    height: 50,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -380,13 +375,13 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: '#333333',
-    paddingVertical: 0, // Remove default vertical padding
+    paddingVertical: 0,
   },
   filterButton: {
-    width: 50, // Slightly smaller button
+    width: 50,
     height: 50,
-    backgroundColor: '#FFFFFF', // White background
-    borderRadius: 25, // Perfectly circular
+    backgroundColor: '#FFFFFF',
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
@@ -396,41 +391,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 5,
     elevation: 3,
-  },
-
-  // --- Category Tabs ---
-  categoryTabsScrollView: {
-    marginBottom: 20,
-    paddingLeft: 20, // Align with search bar
-  },
-  categoryTabsContent: {
-    gap: 10,
-  },
-  categoryTab: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  activeCategoryTab: {
-    backgroundColor: '#10b981', // Active color from original nav
-    borderColor: '#10b981',
-  },
-  categoryTabText: {
-    fontSize: 14,
-    color: '#555555',
-    fontWeight: '500',
-  },
-  activeCategoryTabText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
   },
 
   // --- Section Headers ---
@@ -451,41 +411,24 @@ const styles = StyleSheet.create({
   },
   seeAll: {
     fontSize: 14,
-    color: '#A0A0A0', // Softer "See All"
+    color: '#A0A0A0',
     fontWeight: '600',
-  },
-  shopButton: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 25,
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignSelf: 'flex-start', // Keep button to the left
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  shopButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333333', // Dark text on white button
   },
 
   // --- Shop By Category ---
   shopByCategoriesScroll: {
-    gap: 15, // Space between category circles
+    gap: 15,
   },
   shopByCategoryItem: {
     alignItems: 'center',
-    width: 80, // Fixed width for each item
+    width: 80,
   },
   shopByCategoryImage: {
-    width: 70, // Size of the circular image
+    width: 70,
     height: 70,
-    borderRadius: 35, // Half of width/height for perfect circle
+    borderRadius: 35,
     borderWidth: 1,
-    borderColor: '#EFEFEF', // Light border
+    borderColor: '#EFEFEF',
     marginBottom: 8,
   },
   shopByCategoryText: {
@@ -495,7 +438,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // --- Product Grid (Curated For You) ---
+  // --- Product Grid ---
   productGrid: {
     gap: 16,
   },
@@ -506,16 +449,16 @@ const styles = StyleSheet.create({
   productCard: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderRadius: 10, // Slightly less rounded than original seedCard
+    borderRadius: 10,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 }, // More subtle shadow
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 5,
   },
   productImageContainer: {
-    height: 140, // Image takes more vertical space
+    height: 140,
     width: '100%',
     backgroundColor: '#F8F8F8',
   },
@@ -524,12 +467,12 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   productInfo: {
-    padding: 12, // Adjusted padding
-    alignItems: 'flex-start', // Align text to the left
+    padding: 12,
+    alignItems: 'flex-start',
   },
   productBrand: {
     fontSize: 12,
-    color: '#A0A0A0', // Softer color for brand
+    color: '#A0A0A0',
     marginBottom: 4,
     fontWeight: '500',
   },
@@ -550,10 +493,10 @@ const styles = StyleSheet.create({
   },
 
   bottomSpacer: {
-    height: 100, // Ensure space above bottom nav
+    height: 100,
   },
 
-  // --- ORIGINAL BOTTOM NAVIGATION STYLES (AS REQUESTED) ---
+  // --- Bottom Navigation ---
   bottomNavContainer: {
     position: 'absolute',
     bottom: 0,
@@ -587,7 +530,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontWeight: '500',
   },
-  // activeNavLabel style was removed as it's not present in original nav
   homeButton: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -603,6 +545,122 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+  },
+
+  // --- Modal Styles ---
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderColor: '#f3f3f3',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  loadingContainer: {
+    margin: 30,
+  },
+  emptyLoansContainer: {
+    alignItems: 'center',
+    margin: 30,
+  },
+  emptyLoansText: {
+    color: '#888',
+    fontSize: 16,
+  },
+  loansScrollView: {
+    maxHeight: 350,
+  },
+  loanItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderColor: '#f3f3f3',
+  },
+  loanHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  loanAmount: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginTop: 2,
+  },
+  loanStatus: {
+    fontWeight: 'bold',
+  },
+  loanDate: {
+    color: '#666',
+    fontSize: 13,
+  },
+  loanPurpose: {
+    marginTop: 2,
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+  loanQuantity: {
+    color: '#888',
+    fontSize: 13,
+    marginTop: 2,
+  },
+  loanAgainButton: {
+    backgroundColor: '#10b981',
+    margin: 20,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  loanAgainButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  repaymentButton: {
+    backgroundColor: '#059669',
+    marginHorizontal: 0,
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    marginTop: 12
+  },
+  repaymentButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  loansButton: {
+    backgroundColor: '#2563eb',
+    marginHorizontal: 0,
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    marginTop: 12
+  },
+  loansButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 
