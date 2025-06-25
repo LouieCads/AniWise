@@ -1,6 +1,6 @@
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, Alert } from 'react-native';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons'; // Import an icon library
 
@@ -8,6 +8,33 @@ export default function SignIn() {
   const [form, setForm] = useState({ name: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false); // New state for password visibility
+
+  // Auto-check on mount for existing auth
+  useEffect(() => {
+    const checkAuthAndFarm = async () => {
+      setLoading(true);
+      try {
+        const token = await AsyncStorage.getItem('authToken');
+        if (token) {
+          // Check farm
+          const farmRes = await fetch('http://192.168.254.169:3000/api/farms/my', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const farmData = await farmRes.json();
+          if (farmData.success && Array.isArray(farmData.farms) && farmData.farms.length > 0) {
+            router.replace('/dashboard');
+          } else {
+            router.replace('/mapping');
+          }
+        }
+      } catch (e) {
+        // Ignore errors, stay on sign-in
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkAuthAndFarm();
+  }, []);
 
   const handleSignIn = async () => {
     // Basic validation
@@ -42,30 +69,15 @@ export default function SignIn() {
           const farmData = await farmRes.json();
           if (farmData.success && Array.isArray(farmData.farms) && farmData.farms.length > 0) {
             // User has farm data, redirect to dashboard
-            Alert.alert('Success', data.message, [
-              {
-                text: 'OK',
-                onPress: () => router.push('/mapping')
-              }
-            ]);
+            router.replace('/dashboard');
           } else {
             // No farm data, redirect to mapping
-            Alert.alert('Success', data.message, [
-              {
-                text: 'OK',
-                onPress: () => router.push('/mapping')
-              }
-            ]);
+            router.replace('/mapping');
           }
         } catch (farmError) {
           // If farm check fails, default to mapping
           console.error('Farm data check error:', farmError); // Log the error for debugging
-          Alert.alert('Success', data.message, [
-            {
-              text: 'OK',
-              onPress: () => router.push('/mapping')
-            }
-          ]);
+          router.replace('/mapping');
         }
       } else {
         Alert.alert('Error', data.message);

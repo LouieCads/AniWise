@@ -43,14 +43,13 @@ const ProductDetailsPage = ({ route }) => {
     kita: '',
     dahilan: '',
   });
-  const [cropName, setCropName] = useState(route?.params?.cropName || '');
   const [quantity, setQuantity] = useState(1);
   const [pricePerUnit, setPricePerUnit] = useState(1500);
   const [totalPrice, setTotalPrice] = useState(1500);
   const [creditLimit, setCreditLimit] = useState(null);
 
-  // Product data
-  const productData = {
+  // Use product object from route params, fallback to default
+  const defaultProduct = {
     id: 1,
     name: 'Buto ng Palay',
     category: 'Pananim',
@@ -64,6 +63,7 @@ const ProductDetailsPage = ({ route }) => {
     price: 500.00,
     sizes: ['500g', '1 KG', '2 KG', '5 KG', '10 KG', '25 KG'],
   };
+  const productData = { ...defaultProduct, ...(route?.params || {}) };
 
   const handleAddToCart = () => {
     console.log('Added to cart:', productData.name, 'Size:', selectedSize);
@@ -85,7 +85,6 @@ const ProductDetailsPage = ({ route }) => {
       kita: '',
       dahilan: '',
     });
-    setCropName('');
     setQuantity(1);
     setPricePerUnit(1500);
     setTotalPrice(1500);
@@ -146,7 +145,7 @@ const ProductDetailsPage = ({ route }) => {
       Alert.alert('Error', 'Pakiompleto ang lahat ng kinakailangang impormasyon.');
       return;
     }
-    if (!cropName || !quantity) {
+    if (!productData.name || !quantity) {
       Alert.alert('Error', 'Paki-fill out ang pangalan ng pananim at dami.');
       return;
     }
@@ -164,7 +163,7 @@ const ProductDetailsPage = ({ route }) => {
         },
         body: JSON.stringify({
           ...loanFormData,
-          cropName,
+          cropName: productData.name,
           quantity,
           pricePerUnit,
           totalPrice,
@@ -187,7 +186,7 @@ const ProductDetailsPage = ({ route }) => {
                 pathname: '/product-status',
                 params: {
                   orderNumber: data.loan?.orderNumber || 'ORD-' + Date.now(),
-                  productName: cropName,
+                  productName: productData.name,
                   quantity: quantity + ' ' + selectedSize,
                   currentStatus: 0, // Start at processing
                   estimatedDelivery: data.loan?.estimatedDelivery || 'Sa loob ng 2-3 araw',
@@ -336,7 +335,7 @@ const ProductDetailsPage = ({ route }) => {
 
           <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
             <Text style={styles.modalSubtitle}>
-              Para sa {cropName} (₱{pricePerUnit} bawat sako/kilo)
+              Para sa {productData.name} (₱{pricePerUnit} bawat sako/kilo)
             </Text>
 
             <View style={styles.formContainer}>
@@ -430,19 +429,8 @@ const ProductDetailsPage = ({ route }) => {
 
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Pangalan ng Pananim *</Text>
-                {/* Dropdown for crop selection */}
-                <View style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, overflow: 'hidden', backgroundColor: '#fff' }}>
-                  <Picker
-                    selectedValue={cropName}
-                    onValueChange={setCropName}
-                    style={{ height: 55, width: '100%' }}
-                  >
-                    <Picker.Item label="Pumili ng pananim" value="" />
-                    {cropOptions.map((crop) => (
-                      <Picker.Item key={crop} label={crop} value={crop} />
-                    ))}
-                  </Picker>
-                </View>
+                {/* Display productData.name as read-only */}
+                <Text style={[styles.textInput, styles.disabledInput]}>{productData.name}</Text>
               </View>
 
               <View style={styles.inputContainer}>

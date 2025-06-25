@@ -56,11 +56,10 @@ export default function SignUp() {
       const data = await response.json();
 
       if (data.success) {
-        await AsyncStorage.setItem('authToken', data.token);
-        Alert.alert('Success', data.message, [
+        Alert.alert('Success', data.message + '\nPlease sign in with your new credentials.', [
           {
             text: 'OK',
-            onPress: () => router.push('/sign-in')
+            onPress: () => router.replace('/sign-in')
           }
         ]);
       } else {

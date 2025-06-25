@@ -132,7 +132,7 @@ const CatalogPage = () => {
 
   const handleLoanAgain = () => {
     setLoanModalVisible(false);
-    router.push('/product-details');
+    router.push({ pathname: '/product-details', params: { ...productsData[0] } });
   };
 
   return (
@@ -217,7 +217,7 @@ const CatalogPage = () => {
                   <TouchableOpacity
                     key={product.id}
                     style={styles.productCard}
-                    onPress={() => router.push({ pathname: '/product-details', params: { cropName: product.name } })}
+                    onPress={() => router.push({ pathname: '/product-details', params: { ...product } })}
                     activeOpacity={0.7}
                   >
                     <View style={styles.productImageContainer}>

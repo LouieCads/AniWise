@@ -99,6 +99,52 @@ const WeatherPage = () => {
     return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });  
   };
 
+  const getWeatherExplanation = (description) => {
+    if (!description) return '';
+    const desc = description.toLowerCase();
+    if (desc.includes('clear')) return 'Malinaw ang langit, walang ulap. Magandang panahon para sa pagtatanim at pag-ani.';
+    if (desc.includes('few clouds')) return 'May kaunting ulap, pero maaraw pa rin. Pwedeng magtrabaho sa bukid.';
+    if (desc.includes('scattered clouds')) return 'May mga ulap, pero may sikat ng araw pa rin. Magandang panahon para sa gawain.';
+    if (desc.includes('broken clouds')) return 'Medyo makulimlim, may mga ulap na nagtatakip sa araw.';
+    if (desc.includes('overcast')) return 'Makulimlim, halos natatakpan ng ulap ang langit. Maaaring umulan.';
+    if (desc.includes('rain') && desc.includes('light')) return 'Mahinang ulan. Mag-ingat sa madulas na lupa.';
+    if (desc.includes('rain') && desc.includes('heavy')) return 'Malakas na ulan. Iwasan muna ang pagtatrabaho sa labas.';
+    if (desc.includes('rain')) return 'Ulan na maaaring mahina o malakas. Mag-ingat sa pagbaha at putik.';
+    if (desc.includes('thunderstorm')) return 'May kulog, kidlat, at malakas na ulan. Mag-ingat at huwag magtago sa ilalim ng puno.';
+    if (desc.includes('fog') || desc.includes('mist')) return 'Malabo ang paligid dahil sa hamog o ulap. Mag-ingat sa paglalakad o pagmamaneho.';
+    return 'Tingnan ang kondisyon ng panahon at mag-ingat sa bukid.';
+  };
+
+  const interpretTemperature = (temp) => {
+    if (temp === undefined || temp === null) return '';
+    if (temp < 20) return 'Malamig: Maghanda ng panangga sa lamig.';
+    if (temp >= 20 && temp < 28) return 'Katamtaman: Magandang panahon para sa gawain.';
+    if (temp >= 28 && temp < 35) return 'Mainit: Uminom ng maraming tubig at magpahinga kapag tirik ang araw.';
+    return 'Sobrang init: Mag-ingat sa heat stroke, iwasan ang matagal na trabaho sa labas.';
+  };
+
+  const interpretHumidity = (humidity) => {
+    if (humidity === undefined || humidity === null) return '';
+    if (humidity < 40) return 'Mababa ang halumigmig: Pwedeng matuyo agad ang lupa.';
+    if (humidity >= 40 && humidity <= 80) return 'Katamtamang halumigmig: Magandang kondisyon para sa halaman.';
+    return 'Mataas ang halumigmig: Mag-ingat sa sakit ng halaman at amag.';
+  };
+
+  const interpretWind = (wind) => {
+    if (wind === undefined || wind === null) return '';
+    if (wind < 2) return 'Mahina ang hangin: Ligtas para sa karamihan ng gawain.';
+    if (wind < 6) return 'Katamtamang hangin: Mag-ingat sa pag-spray ng abono o pestisidyo.';
+    return 'Malakas ang hangin: Mag-ingat sa paglipad ng gamit at pinsala sa pananim.';
+  };
+
+  const interpretFeelsLike = (feels, temp) => {
+    if (feels === undefined || feels === null || temp === undefined || temp === null) return '';
+    const diff = Math.abs(feels - temp);
+    if (diff < 2) return 'Pakiramdam ay halos kapareho ng aktwal na temperatura.';
+    if (feels > temp) return 'Mas mainit ang pakiramdam kaysa aktwal na temperatura.';
+    return 'Mas malamig ang pakiramdam kaysa aktwal na temperatura.';
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
@@ -213,6 +259,59 @@ const WeatherPage = () => {
               </Text>
             </LinearGradient>
           ))}
+        </View>
+
+        {/* Weather Condition Explanations for Farmers */}
+        <View style={styles.weatherExplanationCard}>
+          <Text style={styles.weatherExplanationTitle}>📋 <Text style={{fontWeight:'bold'}}>Paliwanag ng Panahon</Text></Text>
+          {/* Main weather condition explanation */}
+          <Text style={[styles.weatherExplanationItem, {marginBottom: 8}]}>
+            <Text style={{fontWeight:'bold', color:'#15803d'}}>
+              {currentWeather.weather && currentWeather.weather[0]?.description
+                ? currentWeather.weather[0].description.charAt(0).toUpperCase() + currentWeather.weather[0].description.slice(1)
+                : ''}
+            </Text>{' '}
+            {getWeatherExplanation(currentWeather.weather && currentWeather.weather[0]?.description)}
+          </Text>
+
+          {/* Temperature */}
+          <Text style={[styles.weatherExplanationItem, {fontWeight:'bold', color:'#d97706', marginTop: 4}]}>🌡️ Temperatura:</Text>
+          <Text style={styles.weatherExplanationItem}>
+            <Text style={{fontWeight:'bold'}}>
+              {currentWeather.main && currentWeather.main.temp !== undefined ? Math.round(currentWeather.main.temp) + '°C' : '--'}
+            </Text>{' – '}
+            {interpretTemperature(currentWeather.main && currentWeather.main.temp !== undefined ? Math.round(currentWeather.main.temp) : undefined)}
+          </Text>
+
+          {/* Humidity */}
+          <Text style={[styles.weatherExplanationItem, {fontWeight:'bold', color:'#2563eb', marginTop: 4}]}>💧 Halumigmig:</Text>
+          <Text style={styles.weatherExplanationItem}>
+            <Text style={{fontWeight:'bold'}}>
+              {currentWeather.main && currentWeather.main.humidity !== undefined ? currentWeather.main.humidity + '%' : '--'}
+            </Text>{' – '}
+            {interpretHumidity(currentWeather.main && currentWeather.main.humidity !== undefined ? currentWeather.main.humidity : undefined)}
+          </Text>
+
+          {/* Wind */}
+          <Text style={[styles.weatherExplanationItem, {fontWeight:'bold', color:'#0ea5e9', marginTop: 4}]}>💨 Hangin:</Text>
+          <Text style={styles.weatherExplanationItem}>
+            <Text style={{fontWeight:'bold'}}>
+              {currentWeather.wind && currentWeather.wind.speed !== undefined ? currentWeather.wind.speed + ' m/s' : '--'}
+            </Text>{' – '}
+            {interpretWind(currentWeather.wind && currentWeather.wind.speed !== undefined ? currentWeather.wind.speed : undefined)}
+          </Text>
+
+          {/* Feels Like */}
+          <Text style={[styles.weatherExplanationItem, {fontWeight:'bold', color:'#f43f5e', marginTop: 4}]}>🤲 Pakiramdam:</Text>
+          <Text style={styles.weatherExplanationItem}>
+            <Text style={{fontWeight:'bold'}}>
+              {currentWeather.main && currentWeather.main.feels_like !== undefined ? Math.round(currentWeather.main.feels_like) + '°C' : '--'}
+            </Text>{' – '}
+            {interpretFeelsLike(
+              currentWeather.main && currentWeather.main.feels_like !== undefined ? Math.round(currentWeather.main.feels_like) : undefined,
+              currentWeather.main && currentWeather.main.temp !== undefined ? Math.round(currentWeather.main.temp) : undefined
+            )}
+          </Text>
         </View>
 
         <View style={styles.bottomSpacer} />
@@ -375,12 +474,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   detailLabel: {
-    fontSize: 20,
+    fontSize: 18,
     color: '#14532d',
     fontWeight: 'bold',
   },
   detailValue: {
-    fontSize: 19,
+    fontSize: 17,
     color: '#0f172a',
     fontWeight: 'bold',
   },
@@ -488,6 +587,29 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+  },
+  weatherExplanationCard: {
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    marginHorizontal: 20,
+    marginBottom: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  weatherExplanationTitle: {
+    fontSize: 19,
+    fontWeight: 'bold',
+    color: '#14532d',
+    marginBottom: 8,
+  },
+  weatherExplanationItem: {
+    fontSize: 15,
+    color: '#334155',
+    marginBottom: 6,
   },
 });
 
