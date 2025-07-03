@@ -45,7 +45,7 @@ export default function SignUp() {
 
   const handleSignUp = async (values, { setSubmitting }) => {
     try {
-      const response = await fetch('http://192.168.254.169:3000/api/signup', {
+      const response = await fetch('http://10.8.10.242:3000/api/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

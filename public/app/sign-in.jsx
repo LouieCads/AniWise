@@ -17,7 +17,7 @@ export default function SignIn() {
         const token = await AsyncStorage.getItem('authToken');
         if (token) {
           // Check farm
-          const farmRes = await fetch('http://192.168.254.169:3000/api/farms/my', {
+          const farmRes = await fetch('http://10.8.10.242:3000/api/farms/my', {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           const farmData = await farmRes.json();
@@ -48,7 +48,7 @@ export default function SignIn() {
     try {
       // Replace 'YOUR_LOCAL_IP' with your actual local IP address
       // You can find it by running 'ipconfig' (Windows) or 'ifconfig' (Mac/Linux)
-      const response = await fetch('http://192.168.254.169:3000/api/signin', {
+      const response = await fetch('http://10.8.10.242:3000/api/signin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -63,7 +63,7 @@ export default function SignIn() {
         await AsyncStorage.setItem('authToken', data.token);
         // Check if user has farm data
         try {
-          const farmRes = await fetch('http://192.168.254.169:3000/api/farms/my', {
+          const farmRes = await fetch('http://10.8.10.242:3000/api/farms/my', {
             headers: { 'Authorization': `Bearer ${data.token}` }
           });
           const farmData = await farmRes.json();

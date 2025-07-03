@@ -229,36 +229,36 @@ router.post("/recommend-crops", authenticateToken, async (req, res) => {
     // Filipino/Taglish, simple, local crops, no question mark icons
     const prompt = `Ikaw ay isang agricultural expert na tumutulong sa mga magsasakang Pilipino. Batay sa mga sumusunod na soil at weather conditions ng isang farm sa Pilipinas, magbigay ng 6 pinaka-angkop na pananim (crops) na madaling maintindihan ng karaniwang magsasaka. Gamitin ang Tagalog o Taglish, iwasan ang technical terms, at mag-focus sa mga pananim na karaniwan at mabenta sa Pilipinas. Huwag gumamit ng question mark (?) na icon—kung walang icon, gamitin ang 'agriculture'.
 
-Soil at Weather Data:
-- Lokasyon: ${location || "Pilipinas"}
-- Temperatura ng Lupa: ${soilData.temperature}°C
-- Moisture ng Lupa: ${soilData.moisture}
-- pH ng Lupa: ${soilData.pH}
-- Temperatura ng Hangin: ${soilData.airTemp}°C
-- Humidity: ${soilData.humidity}%
-- Kondisyon ng Lupa: ${soilData.condition}
-- Lakas ng Hangin: ${soilData.windSpeed} m/s
-- UV Index: ${soilData.uvIndex || "N/A"}
+      Soil at Weather Data:
+      - Lokasyon: ${location || "Pilipinas"}
+      - Temperatura ng Lupa: ${soilData.temperature}°C
+      - Moisture ng Lupa: ${soilData.moisture}
+      - pH ng Lupa: ${soilData.pH}
+      - Temperatura ng Hangin: ${soilData.airTemp}°C
+      - Humidity: ${soilData.humidity}%
+      - Kondisyon ng Lupa: ${soilData.condition}
+      - Lakas ng Hangin: ${soilData.windSpeed} m/s
+      - UV Index: ${soilData.uvIndex || "N/A"}
 
-Ibigay ang sagot sa JSON na ito:
-{
-  "recommendations": [
-    {
-      "cropName": "Pangalan ng pananim (English)",
-      "tagalogName": "Pangalan ng pananim (Tagalog)",
-      "scientificName": "Scientific Name",
-      "suitabilityScore": "Excellent/Good/Fair/Basta simple lang",
-      "reasoning": "Maikling paliwanag kung bakit ito angkop (Tagalog/Taglish)",
-      "plantingSeason": "Kailan itanim (hal. Tag-ulan, Tag-init, buong taon)",
-      "harvestTime": "Gaano katagal bago anihin (hal. 3 buwan)",
-      "careTips": ["Tip 1", "Tip 2", "Tip 3"],
-      "marketValue": "Mataas/Katamtaman/Mababa",
-      "icon": "material-icon-name o 'agriculture' kung wala"
-    }
-  ]
-}
+      Ibigay ang sagot sa JSON na ito:
+      {
+        "recommendations": [
+          {
+            "cropName": "Pangalan ng pananim (English)",
+            "tagalogName": "Pangalan ng pananim (Tagalog)",
+            "scientificName": "Scientific Name",
+            "suitabilityScore": "Excellent/Good/Fair/Basta simple lang",
+            "reasoning": "Maikling paliwanag kung bakit ito angkop (Tagalog/Taglish)",
+            "plantingSeason": "Kailan itanim (hal. Tag-ulan, Tag-init, buong taon)",
+            "harvestTime": "Gaano katagal bago anihin (hal. 3 buwan)",
+            "careTips": ["Tip 1", "Tip 2", "Tip 3"],
+            "marketValue": "Mataas/Katamtaman/Mababa",
+            "icon": "material-icon-name o 'agriculture' kung wala"
+          }
+        ]
+      }
 
-Iwasan ang mahahabang sagot. Simplehan lang para madaling maintindihan ng magsasaka.`;
+      Iwasan ang mahahabang sagot. Simplehan lang para madaling maintindihan ng magsasaka.`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",

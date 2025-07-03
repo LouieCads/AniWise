@@ -69,9 +69,9 @@ const productsData = [
 
 const getApiUrl = () => {
   if (__DEV__) {
-    return 'http://192.168.254.169:3000';
+    return 'http://10.8.10.242:3000';
   } else {
-    return 'https://192.168.254.169:3000';
+    return 'https://10.8.10.242:3000';
   }
 };
 
