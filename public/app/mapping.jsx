@@ -19,6 +19,8 @@ import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { router, useLocalSearchParams } from 'expo-router'; // Import useLocalSearchParams
 import AsyncStorage from '@react-native-async-storage/async-storage'; // For storing auth token
+import { LinearGradient } from 'expo-linear-gradient';
+
 
 /**
  * Mapping Component with Backend Integration
@@ -557,9 +559,9 @@ export default function Mapping() {
   // Function to get API URL based on environment
   const getApiUrl = () => {
     if (__DEV__) {
-      return 'http://10.8.10.242:3000'; // Local development server
+      return 'http://192.168.100.2:3000'; // Local development server
     } else {
-      return 'https://10.8.10.242:3000'; // Production server
+      return 'https://192.168.100.2:3000'; // Production server
     }
   };
 
@@ -727,10 +729,15 @@ export default function Mapping() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f1f5f9" />
+      <StatusBar barStyle="light-content" backgroundColor="#15803d" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <LinearGradient
+                colors={['#15803d', '#22c55e']}
+                style={styles.header}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
@@ -746,7 +753,7 @@ export default function Mapping() {
         >
           <Icon name="my-location" size={24} color="#ffffff" />
         </TouchableOpacity>
-      </View>
+      </LinearGradient>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Welcome Section */}

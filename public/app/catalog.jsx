@@ -1,77 +1,135 @@
 import React from 'react';
 import {
   View, Text, ScrollView, StyleSheet, Image,
-  StatusBar, SafeAreaView, TouchableOpacity, TextInput, Modal, ActivityIndicator, Alert
+  StatusBar, SafeAreaView, TouchableOpacity, TextInput, Modal, ActivityIndicator, Alert, Dimensions
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// --- Dummy Data ---
+const { width } = Dimensions.get('window');
+
+// --- Enhanced Dummy Data ---
 const shopByCategories = [
-  { id: 'women', name: 'Buto', image: 'https://images.unsplash.com/photo-1613500788522-89c4d55bdd0e?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  { id: 'men', name: 'Materyales', image: 'https://plus.unsplash.com/premium_photo-1678677947273-47497a96ae1c?q=80&w=1471&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  { id: 'kids', name: 'Pataba', image: 'https://plus.unsplash.com/premium_photo-1678371209833-b9aff08ff327?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTd8fGZlcnRpbGl6ZXJzfGVufDB8fDB8fHww' },
-  { id: 'beauty', name: 'Makinarya', image: 'https://images.unsplash.com/photo-1666706210261-a57ea3793fc0?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
+  { 
+    id: 'buto', 
+    name: 'Buto', 
+    image: 'https://images.unsplash.com/photo-1613500788522-89c4d55bdd0e?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    gradient: ['#10b981', '#059669']
+  },
+  { 
+    id: 'materyales', 
+    name: 'Materyales', 
+    image: 'https://plus.unsplash.com/premium_photo-1678677947273-47497a96ae1c?q=80&w=1471&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    gradient: ['#3b82f6', '#2563eb']
+  },
+  { 
+    id: 'pataba', 
+    name: 'Pataba', 
+    image: 'https://plus.unsplash.com/premium_photo-1678371209833-b9aff08ff327?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTd8fGZlcnRpbGl6ZXJzfGVufDB8fDB8fHww',
+    gradient: ['#f59e0b', '#d97706']
+  },
+  { 
+    id: 'makinarya', 
+    name: 'Makinarya', 
+    image: 'https://images.unsplash.com/photo-1666706210261-a57ea3793fc0?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    gradient: ['#8b5cf6', '#7c3aed']
+  },
 ];
 
 const productsData = [
   {
     id: 1,
-    name: 'Palay',
+    name: 'Premium Palay',
     brand: 'Local Harvest',
-    description: 'Sariwa at de-kalidad',
+    description: 'Sariwa at de-kalidad na palay',
     image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=300&fit=crop&auto=format',
-    rating: '1500 php / sako'
+    price: '₱1,500',
+    originalPrice: '₱1,800',
+    discount: '17%',
+    rating: 4.8,
+    reviews: 124,
+    inStock: true,
+    badge: 'Best Seller'
   },
   {
     id: 2,
-    name: 'Moon Melon',
-    brand: 'Vicari\'s farm',
-    description: 'Sariwa at de-kalidad',
+    name: 'Moon Melon Seeds',
+    brand: 'Vicari\'s Farm',
+    description: 'Rare hybrid melon variety',
     image: 'https://static.wikia.nocookie.net/growagarden/images/7/7a/MoonMelon.png/revision/latest?cb=20250519094623',
-    rating: '1500 php / sako'
+    price: '₱850',
+    originalPrice: null,
+    discount: null,
+    rating: 4.9,
+    reviews: 89,
+    inStock: true,
+    badge: 'New'
   },
   {
     id: 3,
-    name: 'Kamatis',
+    name: 'Kamatis Premium',
     brand: 'Garden Fresh',
     description: 'Mainam itanim ngayong buwan',
     image: 'https://plus.unsplash.com/premium_photo-1671395501275-630ae5ea02c4?q=80&w=677&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    rating: '1500 php / sako'
+    price: '₱450',
+    originalPrice: '₱550',
+    discount: '18%',
+    rating: 4.6,
+    reviews: 67,
+    inStock: true,
+    badge: null
   },
   {
     id: 4,
-    name: 'Talong',
+    name: 'Talong Hybrid',
     brand: 'Farm Connect',
     description: 'Patok sa tag-init',
     image: 'https://images.unsplash.com/photo-1683543122945-513029986574?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    rating: '1500 php / sako'
+    price: '₱320',
+    originalPrice: null,
+    discount: null,
+    rating: 4.7,
+    reviews: 45,
+    inStock: false,
+    badge: null
   },
   {
     id: 5,
-    name: 'Sili',
+    name: 'Siling Labuyo',
     brand: 'Spice Master',
     description: 'Maanghang at masarap',
     image: 'https://images.unsplash.com/photo-1526179969422-e92255a5f223?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    rating: '1500 php / sako'
+    price: '₱280',
+    originalPrice: null,
+    discount: null,
+    rating: 4.5,
+    reviews: 78,
+    inStock: true,
+    badge: 'Hot'
   },
   {
     id: 6,
-    name: 'Mais',
+    name: 'Sweet Corn',
     brand: 'Green Farms',
-    description: 'Maanghang at masarap',
+    description: 'Premium quality corn seeds',
     image: 'https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=400&h=300&fit=crop&auto=format',
-    rating: '1500 php / sako'
+    price: '₱680',
+    originalPrice: '₱750',
+    discount: '9%',
+    rating: 4.8,
+    reviews: 156,
+    inStock: true,
+    badge: null
   }
 ];
 
 const getApiUrl = () => {
   if (__DEV__) {
-    return 'http://10.8.10.242:3000';
+    return 'http://192.168.100.2:3000';
   } else {
-    return 'https://10.8.10.242:3000';
+    return 'https://192.168.100.2:3000';
   }
 };
 
@@ -94,11 +152,19 @@ const statusColors = {
   'Rejected': '#ef4444',
 };
 
+const badgeColors = {
+  'Best Seller': '#ef4444',
+  'New': '#10b981',
+  'Hot': '#f59e0b',
+};
+
 const CatalogPage = () => {
   const [activeCategory, setActiveCategory] = React.useState('all');
+  const [searchQuery, setSearchQuery] = React.useState('');
   const [loanModalVisible, setLoanModalVisible] = React.useState(false);
   const [loans, setLoans] = React.useState([]);
   const [loadingLoans, setLoadingLoans] = React.useState(false);
+  const [favorites, setFavorites] = React.useState(new Set());
 
   const fetchLoans = async () => {
     setLoadingLoans(true);
@@ -121,6 +187,16 @@ const CatalogPage = () => {
     }
   };
 
+  const toggleFavorite = (productId) => {
+    const newFavorites = new Set(favorites);
+    if (newFavorites.has(productId)) {
+      newFavorites.delete(productId);
+    } else {
+      newFavorites.add(productId);
+    }
+    setFavorites(newFavorites);
+  };
+
   const openLoanModal = () => {
     fetchLoans();
     setLoanModalVisible(true);
@@ -135,76 +211,143 @@ const CatalogPage = () => {
     router.push({ pathname: '/product-details', params: { ...productsData[0] } });
   };
 
+  const filteredProducts = productsData.filter(product => 
+    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.brand.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const renderStars = (rating) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 !== 0;
+    
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(<Icon key={i} name="star" size={12} color="#fbbf24" />);
+    }
+    
+    if (hasHalfStar) {
+      stars.push(<Icon key="half" name="star-half" size={12} color="#fbbf24" />);
+    }
+    
+    return stars;
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* --- Search Header --- */}
-        <View style={styles.searchHeader}>
-          <View style={styles.searchContainer}>
-            <Icon name="search" size={24} color="#A0A0A0" style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search..."
-              placeholderTextColor="#A0A0A0"
-            />
-          </View>
-          <TouchableOpacity style={styles.filterButton}>
-            <Icon name="tune" size={24} color="#808080" />
-          </TouchableOpacity>
-        </View>
-
-        {/* --- Product Repayment and Loans Buttons --- */}
-        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 12 }}>
-          <TouchableOpacity
-            style={styles.repaymentButton}
-            onPress={() => router.push('/product-repayment')}
-          >
-            <Text style={styles.repaymentButtonText}>Repayment</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.loansButton}
-            onPress={() => router.push('/loans')}
-          >
-            <Text style={styles.loansButtonText}>Mga Loans</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* --- Shop By Category Section --- */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Mamili ayon sa kategorya</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAll}>Tingnan lahat</Text>
+        {/* --- Enhanced Header --- */}
+        <LinearGradient
+          colors={['#ffffff', '#f8fafc']}
+          style={styles.header}
+        >
+          <View style={styles.headerTop}>
+            <View style={styles.greetingContainer}>
+              <Text style={styles.greeting}>Kumusta!</Text>
+              <Text style={styles.subGreeting}>Ano ang hanap mo ngayon?</Text>
+            </View>
+            <TouchableOpacity style={styles.notificationButton}>
+              <Icon name="notifications" size={24} color="#374151" />
+              <View style={styles.notificationBadge} />
             </TouchableOpacity>
           </View>
+
+          {/* --- Enhanced Search Bar --- */}
+          <View style={styles.searchContainer}>
+            <Icon name="search" size={20} color="#9ca3af" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Hanapin ang produkto..."
+              placeholderTextColor="#9ca3af"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            <TouchableOpacity style={styles.voiceSearchButton}>
+              <Icon name="mic" size={20} color="#6b7280" />
+            </TouchableOpacity>
+          </View>
+
+          {/* --- Quick Action Buttons --- */}
+          <View style={styles.quickActionsContainer}>
+            <TouchableOpacity
+              style={[styles.quickActionButton, styles.repaymentButton]}
+              onPress={() => router.push('/product-repayment')}
+            >
+              <LinearGradient
+                colors={['#15803d', '#22c55e']}
+                style={styles.quickActionGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <Icon name="payment" size={20} color="#ffffff" />
+                <Text style={styles.quickActionText}>Repayment</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.quickActionButton, styles.loansButton]}
+              onPress={() => router.push('/loans')}
+            >
+              <LinearGradient
+                colors={['#3b82f6', '#2563eb']}
+                style={styles.quickActionGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <Icon name="account-balance" size={20} color="#ffffff" />
+                <Text style={styles.quickActionText}>Mga Loans</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+
+        {/* --- Enhanced Category Section --- */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Mga Kategorya</Text>
+            <TouchableOpacity style={styles.seeAllButton}>
+              <Text style={styles.seeAllText}>Tingnan lahat</Text>
+              <Icon name="arrow-forward" size={16} color="#10b981" />
+            </TouchableOpacity>
+          </View>
+          
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.shopByCategoriesScroll}
+            contentContainerStyle={styles.categoriesContainer}
           >
-            {shopByCategories.map((cat) => (
-              <TouchableOpacity key={cat.id} style={styles.shopByCategoryItem}>
-                <Image source={{ uri: cat.image }} style={styles.shopByCategoryImage} />
-                <Text style={styles.shopByCategoryText}>{cat.name}</Text>
+            {shopByCategories.map((category) => (
+              <TouchableOpacity
+                key={category.id}
+                style={styles.categoryCard}
+                onPress={() => setActiveCategory(category.id)}
+              >
+                <LinearGradient
+                  colors={category.gradient}
+                  style={styles.categoryImageContainer}
+                >
+                  <Image source={{ uri: category.image }} style={styles.categoryImage} />
+                  <View style={styles.categoryOverlay} />
+                </LinearGradient>
+                <Text style={styles.categoryName}>{category.name}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
 
-        {/* --- Curated For You --- */}
+        {/* --- Enhanced Products Section --- */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Pinili para sa iyo</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAll}>Tingnan lahat</Text>
+            <TouchableOpacity style={styles.filterButton}>
+              <Icon name="tune" size={20} color="#6b7280" />
+              <Text style={styles.filterText}>Filter</Text>
             </TouchableOpacity>
           </View>
 
-          {/* --- Product Grid --- */}
           <View style={styles.productGrid}>
-            {productsData.reduce((rows, item, index) => {
+            {filteredProducts.reduce((rows, item, index) => {
               if (index % 2 === 0) {
                 rows.push([item]);
               } else {
@@ -218,17 +361,76 @@ const CatalogPage = () => {
                     key={product.id}
                     style={styles.productCard}
                     onPress={() => router.push({ pathname: '/product-details', params: { ...product } })}
-                    activeOpacity={0.7}
+                    activeOpacity={0.8}
                   >
                     <View style={styles.productImageContainer}>
-                      <Image source={{ uri: product.image }} style={styles.productImage} resizeMode="cover" />
+                      <Image source={{ uri: product.image }} style={styles.productImage} />
+                      
+                      {/* Badge */}
+                      {product.badge && (
+                        <View style={[styles.productBadge, { backgroundColor: badgeColors[product.badge] || '#6b7280' }]}>
+                          <Text style={styles.productBadgeText}>{product.badge}</Text>
+                        </View>
+                      )}
+                      
+                      {/* Discount */}
+                      {product.discount && (
+                        <View style={styles.discountBadge}>
+                          <Text style={styles.discountText}>-{product.discount}</Text>
+                        </View>
+                      )}
+                      
+                      {/* Favorite Button */}
+                      <TouchableOpacity
+                        style={styles.favoriteButton}
+                        onPress={() => toggleFavorite(product.id)}
+                      >
+                        <Icon
+                          name={favorites.has(product.id) ? "favorite" : "favorite-border"}
+                          size={20}
+                          color={favorites.has(product.id) ? "#ef4444" : "#ffffff"}
+                        />
+                      </TouchableOpacity>
+                      
+                      {/* Stock Status */}
+                      {!product.inStock && (
+                        <View style={styles.outOfStockOverlay}>
+                          <Text style={styles.outOfStockText}>Out of Stock</Text>
+                        </View>
+                      )}
                     </View>
+                    
                     <View style={styles.productInfo}>
                       <Text style={styles.productBrand}>{product.brand}</Text>
-                      <Text style={styles.productName}>{product.name}</Text>
-                      <View style={styles.productRatingContainer}>
-                        <Text style={styles.productRating}>{product.rating}</Text>
+                      <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
+                      <Text style={styles.productDescription} numberOfLines={1}>{product.description}</Text>
+                      
+                      {/* Rating */}
+                      <View style={styles.ratingContainer}>
+                        <View style={styles.starsContainer}>
+                          {renderStars(product.rating)}
+                        </View>
+                        <Text style={styles.ratingText}>({product.reviews})</Text>
                       </View>
+                      
+                      {/* Price */}
+                      <View style={styles.priceContainer}>
+                        <Text style={styles.currentPrice}>{product.price}</Text>
+                        {product.originalPrice && (
+                          <Text style={styles.originalPrice}>{product.originalPrice}</Text>
+                        )}
+                      </View>
+                      
+                      {/* Add to Cart Button */}
+                      <TouchableOpacity
+                        style={[styles.addToCartButton, !product.inStock && styles.addToCartButtonDisabled]}
+                        disabled={!product.inStock}
+                      >
+                        <Icon name="add-shopping-cart" size={16} color="#ffffff" />
+                        <Text style={styles.addToCartText}>
+                          {product.inStock ? 'Add to Cart' : 'Out of Stock'}
+                        </Text>
+                      </TouchableOpacity>
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -237,46 +439,43 @@ const CatalogPage = () => {
           </View>
         </View>
 
-        {/* --- Bottom Spacer --- */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
-      {/* --- Bottom Navigation --- */}
+      {/* --- Enhanced Bottom Navigation --- */}
       <View style={styles.bottomNavContainer}>
-        <LinearGradient
-          colors={['#ffffff', '#f8fafc']}
-          style={styles.bottomNav}
-        >
-          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/weather')}>
-            <Icon name="cloud" size={24} color="#6b7280" />
-            <Text style={styles.navLabel}>Weather</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/calendar')}>
-            <Icon name="calendar-today" size={24} color="#6b7280" />
-            <Text style={styles.navLabel}>Calendar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.homeButton} onPress={() => router.push('/dashboard')}>
-            <View>
               <LinearGradient
-                colors={['#10b981', '#059669']}
-                style={styles.homeButtonGradient}
+                colors={['#ffffff', '#f8fafc']}
+                style={styles.bottomNav}
               >
-                <Icon name="home" size={28} color="#ffffff" />
+                <TouchableOpacity style={styles.navButton } onPress={() => router.push('/weather')}>
+                  <Icon name="cloud" size={24} color="#6b7280" />
+                  <Text style={styles.navLabel}>Weather</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.navButton} onPress={() => router.push('/calendar')}>
+                  <Icon name="calendar-today" size={24} color="#6b7280" />
+                  <Text style={styles.navLabel}>Calendar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.homeButton} onPress={() => router.push('/dashboard')}>
+                  <LinearGradient
+                    colors={['#10b981', '#059669']}
+                    style={styles.homeButtonGradient}
+                  >
+                    <Icon name="home" size={28} color="#ffffff" />
+                  </LinearGradient>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.navButton} onPress={() => router.push('/catalog')}>
+                  <Icon name="payments" size={24} color="#6b7280" />
+                  <Text style={styles.navLabel} onPress={() => router.push('/catalog')}>Loan</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.navButton} onPress={() => router.push('/journal')}>
+                  <Icon name="book" size={24} color="#6b7280" />
+                  <Text style={styles.navLabel}>Journal</Text>
+                </TouchableOpacity>
               </LinearGradient>
             </View>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navButton} onPress={openLoanModal}>
-            <Icon name="payments" size={24} color="#6b7280" />
-            <Text style={styles.navLabel}>Loan</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/journal')}>
-            <Icon name="book" size={24} color="#6b7280" />
-            <Text style={styles.navLabel}>Journal</Text>
-          </TouchableOpacity>
-        </LinearGradient>
-      </View>
 
-      {/* --- Loan Modal --- */}
+      {/* --- Enhanced Loan Modal --- */}
       <Modal
         visible={loanModalVisible}
         animationType="slide"
@@ -287,17 +486,21 @@ const CatalogPage = () => {
           <View style={styles.modalContainer}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>My Loans</Text>
-              <TouchableOpacity onPress={closeLoanModal}>
+              <TouchableOpacity onPress={closeLoanModal} style={styles.closeButton}>
                 <Icon name="close" size={24} color="#374151" />
               </TouchableOpacity>
             </View>
+            
             {loadingLoans ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#10b981" />
+                <Text style={styles.loadingText}>Loading loans...</Text>
               </View>
             ) : loans.length === 0 ? (
               <View style={styles.emptyLoansContainer}>
-                <Text style={styles.emptyLoansText}>No loans found.</Text>
+                <Icon name="account-balance-wallet" size={64} color="#d1d5db" />
+                <Text style={styles.emptyLoansTitle}>No loans found</Text>
+                <Text style={styles.emptyLoansSubtitle}>You don't have any loans yet. Start by applying for one!</Text>
               </View>
             ) : (
               <ScrollView style={styles.loansScrollView}>
@@ -305,28 +508,39 @@ const CatalogPage = () => {
                   <View key={loan.id || idx} style={styles.loanItem}>
                     <View style={styles.loanHeader}>
                       <Text style={styles.loanAmount}>₱{loan.totalPrice != null ? loan.totalPrice : (loan.totalAmount || 'N/A')}</Text>
-                      <Text style={[styles.loanStatus, { color: statusColors[loan.status] || '#888' }]}> 
-                        {loan.status}
-                      </Text>
+                      <View style={[styles.loanStatusBadge, { backgroundColor: statusColors[loan.status] || '#888' }]}>
+                        <Text style={styles.loanStatus}>{loan.status}</Text>
+                      </View>
                     </View>
-                    {loan.cropName ? (
+                    {loan.cropName && (
                       <Text style={styles.loanPurpose}>{loan.cropName}</Text>
-                    ) : null}
-                    {loan.cropName ? (
-                      <Text style={styles.loanQuantity}>{loan.quantity}</Text>
-                    ) : null}
+                    )}
+                    {loan.quantity && (
+                      <Text style={styles.loanQuantity}>Quantity: {loan.quantity}</Text>
+                    )}
                     <Text style={styles.loanDate}>
-                      {loan.createdAt ? new Date(loan.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : ''}
+                      {loan.createdAt ? new Date(loan.createdAt).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      }) : ''}
                     </Text>
                   </View>
                 ))}
               </ScrollView>
             )}
+            
             <TouchableOpacity
               style={styles.loanAgainButton}
               onPress={handleLoanAgain}
             >
-              <Text style={styles.loanAgainButtonText}>Loan Again</Text>
+              <LinearGradient
+                colors={['#10b981', '#059669']}
+                style={styles.loanAgainGradient}
+              >
+                <Icon name="add" size={20} color="#ffffff" />
+                <Text style={styles.loanAgainButtonText}>Apply for New Loan</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </View>
@@ -338,107 +552,202 @@ const CatalogPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F7F7',
+    backgroundColor: '#f9fafb',
   },
   scrollView: {
     flex: 1,
   },
-  // --- Search Header ---
-  searchHeader: {
-    flexDirection: 'row',
+  
+  // --- Enhanced Header ---
+  header: {
     paddingHorizontal: 20,
-    paddingTop: 43,
-    paddingBottom: 8,
-    alignItems: 'center',
-    gap: 12,
+    paddingTop: 50,
+    paddingBottom: 20,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
-  searchContainer: {
-    flex: 1,
+  headerTop: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 25,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    paddingHorizontal: 16,
-    height: 50,
+    marginBottom: 20,
+  },
+  greetingContainer: {
+    flex: 1,
+  },
+  greeting: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  subGreeting: {
+    fontSize: 16,
+    color: '#6b7280',
+  },
+  notificationButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#ffffff',
+    justifyContent: 'center',
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 3,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#ef4444',
+  },
+  
+  // --- Enhanced Search ---
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 52,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   searchIcon: {
-    marginRight: 10,
+    marginRight: 12,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#333333',
-    paddingVertical: 0,
+    color: '#111827',
   },
-  filterButton: {
-    width: 50,
-    height: 50,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 25,
+  voiceSearchButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#f3f4f6',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 3,
   },
-
-  // --- Section Headers ---
+  
+  // --- Quick Actions ---
+  quickActionsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  quickActionButton: {
+    flex: 1,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  quickActionGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    gap: 8,
+  },
+  quickActionText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  
+  // --- Sections ---
   section: {
     paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: 32,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#333333',
+    color: '#111827',
   },
-  seeAll: {
+  seeAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  seeAllText: {
     fontSize: 14,
-    color: '#A0A0A0',
+    color: '#10b981',
     fontWeight: '600',
   },
-
-  // --- Shop By Category ---
-  shopByCategoriesScroll: {
-    gap: 15,
+  
+  // --- Enhanced Categories ---
+  categoriesContainer: {
+    paddingRight: 20,
+    gap: 16,
   },
-  shopByCategoryItem: {
+  categoryCard: {
     alignItems: 'center',
+    width: 90,
+  },
+  categoryImageContainer: {
     width: 80,
+    height: 80,
+    borderRadius: 20,
+    marginBottom: 12,
+    overflow: 'hidden',
+    position: 'relative',
   },
-  shopByCategoryImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    borderWidth: 1,
-    borderColor: '#EFEFEF',
-    marginBottom: 8,
+  categoryImage: {
+    width: '100%',
+    height: '100%',
+    opacity: 0.8,
   },
-  shopByCategoryText: {
-    fontSize: 13,
-    color: '#555555',
-    fontWeight: '500',
+  categoryOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+  },
+  categoryName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
     textAlign: 'center',
   },
-
-  // --- Product Grid ---
+  
+  // --- Enhanced Products ---
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  filterText: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
   productGrid: {
     gap: 16,
   },
@@ -448,55 +757,149 @@ const styles = StyleSheet.create({
   },
   productCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
   },
   productImageContainer: {
-    height: 140,
-    width: '100%',
-    backgroundColor: '#F8F8F8',
+    height: 160,
+    position: 'relative',
   },
   productImage: {
     width: '100%',
     height: '100%',
   },
+  productBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  productBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  discountBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: '#ef4444',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  discountText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  favoriteButton: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  outOfStockOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  outOfStockText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
   productInfo: {
-    padding: 12,
-    alignItems: 'flex-start',
+    padding: 16,
   },
   productBrand: {
     fontSize: 12,
-    color: '#A0A0A0',
+    color: '#9ca3af',
     marginBottom: 4,
     fontWeight: '500',
   },
   productName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333333',
+    color: '#111827',
     marginBottom: 4,
+    lineHeight: 20,
   },
-  productRatingContainer: {
+  productDescription: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginBottom: 8,
+  },
+  ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 8,
   },
-  productRating: {
+  starsContainer: {
+    flexDirection: 'row',
+    marginRight: 6,
+  },
+  ratingText: {
     fontSize: 12,
-    color: '#666666',
-    fontWeight: '500',
+    color: '#6b7280',
   },
-
-  bottomSpacer: {
-    height: 100,
+  priceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
   },
-
+  currentPrice: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#10b981',
+    marginRight: 8,
+  },
+  originalPrice: {
+    fontSize: 14,
+    color: '#9ca3af',
+    textDecorationLine: 'line-through',
+  },
+  addToCartButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#10b981',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 6,
+  },
+  addToCartButtonDisabled: {
+    backgroundColor: '#d1d5db',
+  },
+  addToCartText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  
   // --- Bottom Navigation ---
+  bottomSpacer: {
+    height: 120,
+  },
   bottomNavContainer: {
     position: 'absolute',
     bottom: 0,
@@ -510,23 +913,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderRadius: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    borderRadius: 28,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 12,
   },
   navButton: {
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
   },
+  navIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   navLabel: {
     fontSize: 11,
-    color: '#6b7280',
+    color: '#64748b',
     marginTop: 4,
     fontWeight: '500',
   },
@@ -546,121 +956,131 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-
-  // --- Modal Styles ---
+  
+  // --- Enhanced Modal ---
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.2)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '80%',
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    maxHeight: '85%',
+    paddingTop: 8,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
     borderBottomWidth: 1,
-    borderColor: '#f3f3f3',
+    borderBottomColor: '#f3f4f6',
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#111827',
+  },
+  closeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f3f4f6',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   loadingContainer: {
-    margin: 30,
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#6b7280',
   },
   emptyLoansContainer: {
     alignItems: 'center',
-    margin: 30,
+    paddingVertical: 40,
+    paddingHorizontal: 24,
   },
-  emptyLoansText: {
-    color: '#888',
+  emptyLoansTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyLoansSubtitle: {
     fontSize: 16,
+    color: '#6b7280',
+    textAlign: 'center',
+    lineHeight: 24,
   },
   loansScrollView: {
-    maxHeight: 350,
+    maxHeight: 400,
   },
   loanItem: {
-    padding: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
     borderBottomWidth: 1,
-    borderColor: '#f3f3f3',
+    borderBottomColor: '#f3f4f6',
   },
   loanHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 8,
   },
   loanAmount: {
+    fontSize: 20,
     fontWeight: 'bold',
-    fontSize: 16,
-    marginTop: 2,
+    color: '#111827',
+  },
+  loanStatusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   loanStatus: {
+    fontSize: 12,
     fontWeight: 'bold',
-  },
-  loanDate: {
-    color: '#666',
-    fontSize: 13,
+    color: '#ffffff',
   },
   loanPurpose: {
-    marginTop: 2,
-    fontSize: 15,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 4,
   },
   loanQuantity: {
-    color: '#888',
-    fontSize: 13,
-    marginTop: 2,
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 4,
+  },
+  loanDate: {
+    fontSize: 14,
+    color: '#9ca3af',
   },
   loanAgainButton: {
-    backgroundColor: '#10b981',
-    margin: 20,
-    borderRadius: 12,
-    padding: 16,
+    margin: 24,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  loanAgainGradient: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    gap: 8,
   },
   loanAgainButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: '#ffffff',
     fontSize: 16,
-  },
-  repaymentButton: {
-    backgroundColor: '#059669',
-    marginHorizontal: 0,
-    borderRadius: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 2,
-    marginTop: 12
-  },
-  repaymentButtonText: {
-    color: '#fff',
     fontWeight: 'bold',
-    fontSize: 16,
-  },
-  loansButton: {
-    backgroundColor: '#2563eb',
-    marginHorizontal: 0,
-    borderRadius: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 2,
-    marginTop: 12
-  },
-  loansButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
   },
 });
 

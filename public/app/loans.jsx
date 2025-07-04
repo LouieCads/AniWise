@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, SafeAreaView, StatusBar, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, SafeAreaView, StatusBar, Alert, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const getApiUrl = () => {
   if (__DEV__) {
@@ -62,13 +63,19 @@ const LoansPage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <View style={styles.header}>
+      <StatusBar barStyle="light-content" backgroundColor="#15803d" />
+      <LinearGradient
+          colors={['#15803d', '#22c55e']}
+          style={styles.header}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        >
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Icon name="arrow-back" size={24} color="#374151" />
+          <Icon name="chevron-left" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Loans</Text>
-      </View>
+        <View style={{ width: 40 }} />
+      </LinearGradient>
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#10b981" />
@@ -111,20 +118,29 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderColor: '#f3f3f3',
-    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 0 : 20,
+    paddingBottom: 20,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   backButton: {
-    marginRight: 10,
-    padding: 4,
+    width: 40,
+    height: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#ffffff',
   },
   loadingContainer: {
     flex: 1,

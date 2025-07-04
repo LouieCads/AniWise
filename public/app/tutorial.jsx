@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
   SafeAreaView,
   StatusBar,
   Image,
@@ -20,62 +19,47 @@ const { width, height } = Dimensions.get('window');
 const OnboardingScreen = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [fadeAnim] = useState(new Animated.Value(0));
-  const [slideAnim] = useState(new Animated.Value(50));
-  const [scaleAnim] = useState(new Animated.Value(0.8));
+  const [slideAnim] = useState(new Animated.Value(30));
 
   const onboardingSteps = [
     {
-      title: "Kumusta, kaibigan!",
-      message: "Ako si Tatay Lito, ang inyong gabay dito sa app! Matutulungan ko kayong maintindihan kung paano ito gagamitin para sa inyong sakahan.",
-      icon: "waving-hand",
-      color: "#10b981",
-      bgGradient: ["#10b981", "#059669"],
-      illustration: "👋"
+      title: "Maligayang pagdating sa AniWise!",
+      message: "Ako si Tatay Lito. Tutulong ako sa inyo na gamitin ang app na ito para sa inyong bukid.",
+      icon: "👋",
+      color: "#22c55e"
     },
     {
-      title: "Ano ba ang Credibility Score?",
-      message: "Ito yung numero na nagpapakita kung gaano ka kagaling mag-alaga ng lupa mo. Parang grade sa school - mas mataas, mas maganda!",
-      subMessage: "Kapag 'Good' ang score mo, pwede kang makakuha ng mas malaking tulong sa pera!",
-      icon: "star",
-      color: "#f59e0b",
-      bgGradient: ["#f59e0b", "#d97706"],
-      illustration: "⭐"
+      title: "Ano ang Score?",
+      message: "Yung score ay parang grade sa school. Kapag mataas ang score mo, ibig sabihin magaling ka mag-alaga ng lupa.",
+      tip: "Mataas na score = Mas malaking tulong sa pera!",
+      icon: "⭐",
+      color: "#f59e0b"
     },
     {
       title: "Bakit importante ang lupa?",
-      message: "Tinitingnan namin kung healthy ba ang lupa mo - yung moisture, temperatura, at humidity. Kapag healthy ang lupa, healthy din ang tanim!",
-      subMessage: "Makikita mo dito sa app ang lagay ng inyong lupa araw-araw.",
-      icon: "grass",
-      color: "#059669",
-      bgGradient: ["#059669", "#047857"],
-      illustration: "🌱"
+      message: "Sinusukat namin kung basa ba ang lupa, kung mainit ba, at kung okay ba ang hangin. Healthy na lupa = Healthy na tanim!",
+      tip: "Makikita mo dito ang lagay ng lupa araw-araw.",
+      icon: "🌱",
+      color: "#10b981"
     },
     {
-      title: "Paano nakakakuha ng pera?",
-      message: "Kapag maganda ang score mo, pwede kang mag-loan! Yung pera na 'to, pwede mong gamitin para sa binhi, pataba, o iba pang pangangailangan sa farm.",
-      subMessage: "Hindi ka mag-aalala - ipapakita namin kung magkano pwede mong makuha!",
-      icon: "account-balance-wallet",
-      color: "#dc2626",
-      bgGradient: ["#dc2626", "#b91c1c"],
-      illustration: "💰"
+      title: "Paano makakakuha ng pera?",
+      message: "Kapag maganda ang score mo, pwede kang humiram ng pera. Gamitin mo para sa binhi, pataba, o iba pang kailangan.",
+      tip: "Walang alalahanin - ipapakita namin kung magkano.",
+      icon: "💰",
+      color: "#ef4444"
     },
     {
-      title: "Mga Features ng App",
-      message: "May weather forecast para sa panahon, calendar para sa schedule, at journal para sa mga notes mo!",
-      subMessage: "Lahat ng kailangan mo para sa farming, nandito na!",
-      icon: "apps",
-      color: "#7c3aed",
-      bgGradient: ["#7c3aed", "#6d28d9"],
-      illustration: "📱"
+      title: "Ano meron sa app?",
+      message: "May weather para sa panahon, calendar para sa schedule, at journal para sa mga note mo!",
+      icon: "📱",
+      color: "#8b5cf6"
     },
     {
-      title: "Handa na ba kayo?",
-      message: "Simulan na natin! Mag-enjoy sa paggamit ng app at sana makatulong ito sa inyong pag-farm!",
-      subMessage: "Kapag may tanong kayo, hanapin niyo lang si Tatay Lito! 😊",
-      icon: "celebration",
-      color: "#10b981",
-      bgGradient: ["#10b981", "#059669"],
-      illustration: "🎉"
+      title: "Handa na ba tayo?",
+      message: "Simulan na natin! Samahan mo ako sa paggamit ng app. Kapag may tanong ka, hanapin mo lang ako! 😊",
+      icon: "🎉",
+      color: "#22c55e"
     }
   ];
 
@@ -84,27 +68,18 @@ const OnboardingScreen = () => {
   }, [currentStep]);
 
   const animateStep = () => {
-    // Reset animations
     fadeAnim.setValue(0);
-    slideAnim.setValue(50);
-    scaleAnim.setValue(0.8);
+    slideAnim.setValue(30);
 
-    // Animate in sequence
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 600,
+        duration: 500,
         useNativeDriver: true,
       }),
       Animated.timing(slideAnim, {
         toValue: 0,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        tension: 100,
-        friction: 8,
+        duration: 400,
         useNativeDriver: true,
       }),
     ]).start();
@@ -132,188 +107,118 @@ const OnboardingScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#14532d" />
+      <StatusBar barStyle="light-content" backgroundColor="#16a34a" />
       
-      {/* Dynamic Header */}
-      <LinearGradient
-        colors={currentStepData.bgGradient}
-        style={styles.header}
-      >
-        <TouchableOpacity 
-          style={styles.skipButton} 
-          onPress={skipOnboarding}
-        >
-          <Text style={styles.skipText}>Skip</Text>
-          <Icon name="close" size={16} color="#ffffff" />
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.skipButton} onPress={skipOnboarding}>
+          <Text style={styles.skipText}>Laktawan</Text>
         </TouchableOpacity>
         
-        {/* Enhanced Progress Indicator */}
+        {/* Simple Progress */}
         <View style={styles.progressContainer}>
           <Text style={styles.progressText}>
-            {currentStep + 1} ng {onboardingSteps.length}
+            {currentStep + 1} sa {onboardingSteps.length}
           </Text>
-          <View style={styles.progressBarContainer}>
-            <View style={styles.progressBarBackground} />
-            <Animated.View 
+          <View style={styles.progressBar}>
+            <View 
               style={[
-                styles.progressBarFill, 
-                { 
-                  width: `${((currentStep + 1) / onboardingSteps.length) * 100}%` 
-                }
+                styles.progressFill, 
+                { width: `${((currentStep + 1) / onboardingSteps.length) * 100}%` }
               ]} 
             />
           </View>
         </View>
-      </LinearGradient>
+      </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Enhanced Mascot Section */}
+      {/* Main Content */}
+      <View style={styles.content}>
         <Animated.View 
           style={[
-            styles.mascotSection,
+            styles.stepContainer,
             {
               opacity: fadeAnim,
-              transform: [
-                { translateY: slideAnim },
-                { scale: scaleAnim }
-              ]
+              transform: [{ translateY: slideAnim }]
             }
           ]}
         >
-          {/* Large Illustration */}
-          <View style={[styles.illustrationContainer, { backgroundColor: currentStepData.bgGradient[0] + '20' }]}>
-            <Text style={styles.illustration}>{currentStepData.illustration}</Text>
-            <View style={styles.illustrationGlow} />
+          {/* Big Icon */}
+          <View style={[styles.iconContainer, { backgroundColor: currentStepData.color + '20' }]}>
+            <Text style={styles.stepIcon}>{currentStepData.icon}</Text>
           </View>
-          
-          {/* Mascot with Floating Animation */}
-          <View style={styles.mascotWrapper}>
-            <LinearGradient
-              colors={currentStepData.bgGradient}
-              style={styles.mascotCircle}
-            >
-              <Image
-                source={{
-                  uri: 'https://images.unsplash.com/photo-1710563849800-73af5bfc9f36?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-                }}
-                style={styles.mascotImage}
-              />
-            </LinearGradient>
-            <View style={styles.mascotBadge}>
-              <Text style={styles.mascotName}>Tatay Lito</Text>
-              <Text style={styles.mascotRole}>Aniwise Guide</Text>
-            </View>
-          </View>
-        </Animated.View>
 
-        {/* Feature Preview Cards for Step 4 */}
-        {currentStep === 4 && (
-          <Animated.View 
-            style={[
-              styles.featurePreview,
-              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
-            ]}
-          >
-            <Text style={styles.featurePreviewTitle}>Mga Available Features:</Text>
-            <View style={styles.previewRow}>
-              <View style={styles.previewCard}>
-                <LinearGradient colors={['#3b82f6', '#2563eb']} style={styles.previewIconBg}>
-                  <Icon name="cloud" size={28} color="#ffffff" />
-                </LinearGradient>
-                <Text style={styles.previewText}>Weather</Text>
-                <Text style={styles.previewSubtext}>Daily forecast</Text>
-              </View>
-              <View style={styles.previewCard}>
-                <LinearGradient colors={['#f59e0b', '#d97706']} style={styles.previewIconBg}>
-                  <Icon name="calendar-today" size={28} color="#ffffff" />
-                </LinearGradient>
-                <Text style={styles.previewText}>Calendar</Text>
-                <Text style={styles.previewSubtext}>Schedule tasks</Text>
-              </View>
-            </View>
-            <View style={styles.previewRow}>
-              <View style={styles.previewCard}>
-                <LinearGradient colors={['#10b981', '#059669']} style={styles.previewIconBg}>
-                  <Icon name="account-balance-wallet" size={28} color="#ffffff" />
-                </LinearGradient>
-                <Text style={styles.previewText}>Loan</Text>
-                <Text style={styles.previewSubtext}>Get funding</Text>
-              </View>
-              <View style={styles.previewCard}>
-                <LinearGradient colors={['#8b5cf6', '#7c3aed']} style={styles.previewIconBg}>
-                  <Icon name="book" size={28} color="#ffffff" />
-                </LinearGradient>
-                <Text style={styles.previewText}>Journal</Text>
-                <Text style={styles.previewSubtext}>Track progress</Text>
-              </View>
-            </View>
-          </Animated.View>
-        )}
-      </ScrollView>
-
-      {/* Dialog Section - Now at Bottom */}
-      <Animated.View 
-        style={[
-          styles.dialogSection,
-          { 
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }]
-          }
-        ]}
-      >
-        <LinearGradient
-          colors={['#ffffff', '#f8fafc']}
-          style={styles.dialogContainer}
-        >
-          <View style={styles.dialogHeader}>
-            <View style={styles.dialogAvatar}>
-              <Text style={styles.dialogAvatarText}>🗣️</Text>
-            </View>
-            <View style={styles.dialogInfo}>
-              <Text style={styles.dialogSpeaker}>Tatay Lito</Text>
-              <Text style={styles.dialogTimestamp}>Nueva Ecija Farmer</Text>
-            </View>
+          {/* Tatay Lito */}
+          <View style={styles.mascotContainer}>
+            <Image
+              source={{
+                uri: 'https://images.unsplash.com/photo-1710563849800-73af5bfc9f36?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+              }}
+              style={styles.mascotImage}
+            />
+            <Text style={styles.mascotName}>Tatay Lito</Text>
           </View>
-          
-          <View style={styles.dialogBubble}>
-            <Text style={styles.dialogTitle}>{currentStepData.title}</Text>
-            <Text style={styles.dialogMessage}>{currentStepData.message}</Text>
-            {currentStepData.subMessage && (
-              <View style={styles.dialogSubMessageContainer}>
-                <Icon name="lightbulb" size={16} color="#f59e0b" />
-                <Text style={styles.dialogSubMessage}>{currentStepData.subMessage}</Text>
+
+          {/* Message */}
+          <View style={styles.messageContainer}>
+            <Text style={styles.stepTitle}>{currentStepData.title}</Text>
+            <Text style={styles.stepMessage}>{currentStepData.message}</Text>
+            
+            {currentStepData.tip && (
+              <View style={styles.tipContainer}>
+                <Icon name="lightbulb" size={18} color="#f59e0b" />
+                <Text style={styles.tipText}>{currentStepData.tip}</Text>
               </View>
             )}
           </View>
-        </LinearGradient>
-      </Animated.View>
 
-      {/* Enhanced Bottom Navigation */}
+          {/* Show simple features for step 4 */}
+          {currentStep === 4 && (
+            <View style={styles.featuresContainer}>
+              <Text style={styles.featuresTitle}>Mga makikita mo dito:</Text>
+              <View style={styles.featuresGrid}>
+                <View style={styles.featureItem}>
+                  <Text style={styles.featureIcon}>🌤️</Text>
+                  <Text style={styles.featureText}>Panahon</Text>
+                </View>
+                <View style={styles.featureItem}>
+                  <Text style={styles.featureIcon}>📅</Text>
+                  <Text style={styles.featureText}>Calendar</Text>
+                </View>
+                <View style={styles.featureItem}>
+                  <Text style={styles.featureIcon}>💰</Text>
+                  <Text style={styles.featureText}>Pera</Text>
+                </View>
+                <View style={styles.featureItem}>
+                  <Text style={styles.featureIcon}>📝</Text>
+                  <Text style={styles.featureText}>Notes</Text>
+                </View>
+              </View>
+            </View>
+          )}
+        </Animated.View>
+      </View>
+
+      {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
         <TouchableOpacity 
-          style={[styles.navButton, currentStep === 0 && styles.navButtonDisabled]}
+          style={[styles.backButton, currentStep === 0 && styles.buttonDisabled]}
           onPress={prevStep}
           disabled={currentStep === 0}
         >
           <Icon name="arrow-back" size={20} color={currentStep === 0 ? "#cbd5e1" : "#6b7280"} />
-          <Text style={[styles.navButtonText, currentStep === 0 && styles.navButtonTextDisabled]}>
+          <Text style={[styles.backButtonText, currentStep === 0 && styles.buttonTextDisabled]}>
             Bumalik
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
-          style={styles.nextButton}
+          style={[styles.nextButton, { backgroundColor: currentStepData.color }]}
           onPress={nextStep}
         >
-          <LinearGradient
-            colors={currentStepData.bgGradient}
-            style={styles.nextButtonGradient}
-          >
-            <Text style={styles.nextButtonText}>
-              {currentStep === onboardingSteps.length - 1 ? 'Simulan! 🚀' : 'Susunod'}
-            </Text>
-            <Icon name="arrow-forward" size={20} color="#ffffff" />
-          </LinearGradient>
+          <Text style={styles.nextButtonText}>
+            {currentStep === onboardingSteps.length - 1 ? 'Simulan na! 🚀' : 'Susunod'}
+          </Text>
+          <Icon name="arrow-forward" size={20} color="#ffffff" />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -326,26 +231,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
   },
   header: {
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 24,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
+    backgroundColor: '#16a34a',
+    paddingHorizontal: 20,
+    paddingTop: 15,
+    paddingBottom: 20,
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
   },
   skipButton: {
     alignSelf: 'flex-end',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 15,
     paddingVertical: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 20,
-    gap: 4,
+    borderRadius: 15,
   },
   skipText: {
     color: '#ffffff',
@@ -354,274 +252,185 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     alignItems: 'center',
+    marginTop: 15,
   },
   progressText: {
     color: '#ffffff',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
-    marginBottom: 12,
-    opacity: 0.9,
+    marginBottom: 10,
   },
-  progressBarContainer: {
+  progressBar: {
     width: width * 0.6,
     height: 6,
-    position: 'relative',
-  },
-  progressBarBackground: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
     borderRadius: 3,
   },
-  progressBarFill: {
+  progressFill: {
     height: '100%',
     backgroundColor: '#ffffff',
     borderRadius: 3,
   },
   content: {
     flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 30,
   },
-  mascotSection: {
+  stepContainer: {
+    flex: 1,
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 40,
-    paddingBottom: 20,
   },
-  illustrationContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+  iconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
-    position: 'relative',
-    overflow: 'hidden',
+    marginBottom: 20,
   },
-  illustration: {
-    fontSize: 60,
+  stepIcon: {
+    fontSize: 50,
   },
-  illustrationGlow: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    borderRadius: 60,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  mascotWrapper: {
+  mascotContainer: {
     alignItems: 'center',
-  },
-  mascotCircle: {
-    width: 125,
-    height: 125,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    marginBottom: 25,
   },
   mascotImage: {
-    width: 125,
-    height: 125,
-    borderRadius: 27,
-  },
-  mascotBadge: {
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginTop: 8,
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 8,
   },
   mascotName: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#1f2937',
   },
-  mascotRole: {
-    fontSize: 12,
-    color: '#6b7280',
-    fontWeight: '500',
-  },
-  featurePreview: {
-    paddingHorizontal: 24,
-    marginBottom: 20,
-  },
-  featurePreviewTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  previewRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-    gap: 12,
-  },
-  previewCard: {
-    flex: 1,
+  messageContainer: {
     backgroundColor: '#ffffff',
     borderRadius: 20,
     padding: 20,
-    alignItems: 'center',
-    elevation: 3,
+    marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
+    elevation: 3,
   },
-  previewIconBg: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  previewText: {
-    fontSize: 14,
+  stepTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#1f2937',
-    marginBottom: 2,
+    marginBottom: 10,
+    textAlign: 'center',
   },
-  previewSubtext: {
-    fontSize: 12,
-    color: '#6b7280',
+  stepMessage: {
+    fontSize: 16,
+    color: '#374151',
+    lineHeight: 24,
+    textAlign: 'center',
   },
-  dialogSection: {
-    paddingHorizontal: 24,
-    paddingBottom: 8,
+  tipContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fffbeb',
+    padding: 15,
+    borderRadius: 15,
+    marginTop: 15,
+    borderLeftWidth: 4,
+    borderLeftColor: '#f59e0b',
   },
-  dialogContainer: {
-    borderRadius: 24,
+  tipText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#92400e',
+    marginLeft: 10,
+    fontWeight: '500',
+  },
+  featuresContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
     padding: 20,
-    elevation: 4,
+    width: '100%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 12,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  dialogHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  dialogAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f3f4f6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  dialogAvatarText: {
+  featuresTitle: {
     fontSize: 18,
-  },
-  dialogInfo: {
-    flex: 1,
-  },
-  dialogSpeaker: {
-    fontSize: 16,
     fontWeight: 'bold',
     color: '#1f2937',
+    marginBottom: 15,
+    textAlign: 'center',
   },
-  dialogTimestamp: {
-    fontSize: 12,
-    color: '#6b7280',
+  featuresGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
-  dialogBubble: {
+  featureItem: {
+    width: '48%',
     backgroundColor: '#f8fafc',
-    borderRadius: 16,
-    padding: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#10b981',
+    borderRadius: 15,
+    padding: 15,
+    alignItems: 'center',
+    marginBottom: 10,
   },
-  dialogTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  featureIcon: {
+    fontSize: 30,
+    marginBottom: 5,
+  },
+  featureText: {
+    fontSize: 14,
+    fontWeight: '600',
     color: '#1f2937',
-    marginBottom: 8,
-  },
-  dialogMessage: {
-    fontSize: 15,
-    color: '#374151',
-    lineHeight: 22,
-    marginBottom: 8,
-  },
-  dialogSubMessageContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#fffbeb',
-    padding: 12,
-    borderRadius: 12,
-    gap: 8,
-  },
-  dialogSubMessage: {
-    flex: 1,
-    fontSize: 13,
-    color: '#92400e',
-    lineHeight: 18,
-    fontStyle: 'italic',
   },
   bottomNav: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
     backgroundColor: '#ffffff',
     borderTopWidth: 1,
     borderTopColor: '#f1f5f9',
   },
-  navButton: {
+  backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 15,
     paddingVertical: 12,
-    borderRadius: 16,
+    borderRadius: 15,
     backgroundColor: '#f8fafc',
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    gap: 6,
   },
-  navButtonDisabled: {
+  buttonDisabled: {
     opacity: 0.5,
   },
-  navButtonText: {
+  backButtonText: {
     fontSize: 14,
     fontWeight: '600',
     color: '#6b7280',
+    marginLeft: 5,
   },
-  navButtonTextDisabled: {
+  buttonTextDisabled: {
     color: '#cbd5e1',
   },
   nextButton: {
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  nextButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    gap: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 15,
   },
   nextButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#ffffff',
+    marginRight: 5,
   },
 });
 

@@ -5,6 +5,7 @@ import {
   StyleSheet,
   StatusBar,
   SafeAreaView,
+  Platform,
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
@@ -14,39 +15,49 @@ import { useRouter } from 'expo-router';
 
 const CROP_DATA = {
   rice: {
-    name: 'Palay (Rice)',
+    name: 'Palay',
+    icon: '🌾',
     plantingMonths: [5, 6], // June, July
     growthDuration: 120, // days
-    description: 'Mainam itanim ang palay sa Hunyo-Hulyo dahil sa pagsisimula ng tag-ulan, na mahalaga para sa patubig.',
-    regionalAdvice: 'Sa Luzon, ang panahon na ito ay sakto sa regular na pag-ulan. Sa Visayas at Mindanao, i-adjust base sa lokal na pattern ng ulan.'
+    description: 'Mainam itanim ang palay sa Hunyo-Hulyo dahil sa pagsisimula ng tag-ulan. Kailangan ng maraming tubig para sa magandang ani.',
+    tips: 'Siguraduhing may sapat na tubig at tamang lupa. Mag-apply ng fertilizer pagkatapos ng 2 linggo.',
+    regionalAdvice: 'Sa Luzon: Tamang panahon para sa regular na pag-ulan. Sa Visayas/Mindanao: Sundin ang lokal na pattern ng ulan.'
   },
   corn: {
-    name: 'Mais (Corn)',
+    name: 'Mais',
+    icon: '🌽',
     plantingMonths: [4, 5], // May, June
     growthDuration: 75,
-    description: 'Ang mais ay magandang itanim sa Mayo hanggang Hunyo, kung kailan sapat ang sikat ng araw at may sapat na ulan.',
-    regionalAdvice: 'Ito ay angkop sa karamihan ng rehiyon dahil sa balanseng panahon ng tag-araw at simula ng tag-ulan.'
+    description: 'Itanim ang mais sa Mayo-Hunyo para sa tamang init at ulan. Mas mabilis lumaki kumpara sa palay.',
+    tips: 'Lagyan ng compost o pataba. Bantayan ang peste lalo na sa unang buwan.',
+    regionalAdvice: 'Angkop sa lahat ng rehiyon. Pwedeng 2-3 beses sa isang taon depende sa lugar.'
   },
   sugarcane: {
-    name: 'Tubo (Sugarcane)',
+    name: 'Tubo',
+    icon: '🎋',
     plantingMonths: [9, 10], // October, November
     growthDuration: 365,
-    description: 'Ang tubo ay pinakamainam itanim sa Oktubre-Nobyembre upang lumago sa mas malamig na buwan at anihin bago ang susunod na tag-ulan.',
-    regionalAdvice: 'Angkop ito sa mga lugar tulad ng Negros sa Visayas, kung saan malawak ang taniman ng tubo.'
+    description: 'Mahabang panahon bago ma-ani ang tubo. Itanim sa Oktubre-Nobyembre para sa tamang laki.',
+    tips: 'Kailangan ng malaking lupang sakahan. Regular na pag-aalaga sa loob ng 1 taon.',
+    regionalAdvice: 'Sikat sa Negros at iba pang sugar-producing areas. Kailangan ng tamang klima.'
   },
   onion: {
-    name: 'Sibuyas (Onion)',
+    name: 'Sibuyas',
+    icon: '🧅',
     plantingMonths: [10, 11], // November, December
     growthDuration: 90,
-    description: 'Itanim ang sibuyas sa Nobyembre-Disyembre para sa anihan sa mga buwan ng tag-init, kung kailan mababa ang tyansa ng pag-ulan.',
-    regionalAdvice: 'Kilala ang Nueva Ecija sa Luzon sa pagtatanim ng sibuyas sa panahong ito.'
+    description: 'Itanim sa simula ng tag-lamig para sa magandang laki. Ayaw ng masyadong ulan.',
+    tips: 'Kailangan ng matabang lupa. Iwasan ang sobrang tubig para hindi mabulok.',
+    regionalAdvice: 'Kilala ang Nueva Ecija sa magagandang sibuyas. Sundin ang tamang spacing.'
   },
   mango: {
-    name: 'Mangga (Mango)',
+    name: 'Mangga',
+    icon: '🥭',
     plantingMonths: [2, 3], // March, April
     growthDuration: 120,
-    description: 'Ang pagtatanim ng mangga sa Marso-Abril ay nagbibigay-daan para sa pamumulaklak sa tag-init, na nagreresulta sa mas matamis na bunga.',
-    regionalAdvice: 'Ang Guimaras sa Visayas at mga probinsya sa Central Luzon ay perpekto para sa pagtatanim ng mangga sa panahong ito.'
+    description: 'Itanim sa tag-init para sa tamang pamumulaklak. Magbubunga ng matamis na mangga.',
+    tips: 'Kailangan ng malalim na hukay. Regular na pruning para sa magandang hugis.',
+    regionalAdvice: 'Sikat sa Guimaras at Central Luzon. Kailangan ng matagal na pag-aalaga.'
   }
 };
 
@@ -62,7 +73,7 @@ const Calendar = () => {
 
   useEffect(() => {
     const crop = CROP_DATA[selectedCrop];
-    const year = new Date().getFullYear(); // Use current year for planning
+    const year = new Date().getFullYear();
 
     const newPlantingDates = [];
     const newHarvestDates = [];
@@ -117,7 +128,6 @@ const Calendar = () => {
   const handleDatePress = (day) => {
     if (!day) return;
     const fullDate = new Date(currentYear, date.getMonth(), day);
-    // You could navigate or show info about this date
     console.log('Pressed date:', fullDate.toDateString());
   };
 
@@ -160,7 +170,7 @@ const Calendar = () => {
     return days;
   }, [date, plantingDates, harvestDates]);
 
-  const weekDays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const weekDays = ['Lin', 'Lun', 'Mar', 'Miy', 'Huw', 'Biy', 'Sab'];
 
   const renderCalendarDay = (dayInfo) => {
     if (!dayInfo.day) {
@@ -188,82 +198,117 @@ const Calendar = () => {
         activeOpacity={0.7}
       >
         <Text style={textStyle}>{dayInfo.day}</Text>
+        {dayInfo.isPlanting && (
+          <View style={styles.plantingIndicator}>
+            <Text style={styles.indicatorText}>🌱</Text>
+          </View>
+        )}
+        {dayInfo.isHarvest && (
+          <View style={styles.harvestIndicator}>
+            <Text style={styles.indicatorText}>🌾</Text>
+          </View>
+        )}
       </TouchableOpacity>
     );
   };
 
   const renderCropSelector = () => {
     return (
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.cropSelectorContent}
-        style={styles.cropSelectorScrollView}
-      >
-        {Object.keys(CROP_DATA).map((cropKey) => (
-          <TouchableOpacity
-            key={cropKey}
-            style={[
-              styles.cropButton,
-              selectedCrop === cropKey && styles.selectedCropButton
-            ]}
-            onPress={() => setSelectedCrop(cropKey)}
-          >
-            <Text style={[
-              styles.cropButtonText,
-              selectedCrop === cropKey && styles.selectedCropButtonText
-            ]}>
-              {CROP_DATA[cropKey].name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <View style={styles.cropSelectorContainer}>
+        <Text style={styles.cropSelectorTitle}>Piliin ang Pananim:</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.cropSelectorContent}
+          style={styles.cropSelectorScrollView}
+        >
+          {Object.keys(CROP_DATA).map((cropKey) => (
+            <TouchableOpacity
+              key={cropKey}
+              style={[
+                styles.cropButton,
+                selectedCrop === cropKey && styles.selectedCropButton
+              ]}
+              onPress={() => setSelectedCrop(cropKey)}
+            >
+              <Text style={styles.cropIcon}>{CROP_DATA[cropKey].icon}</Text>
+              <Text style={[
+                styles.cropButtonText,
+                selectedCrop === cropKey && styles.selectedCropButtonText
+              ]}>
+                {CROP_DATA[cropKey].name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
     );
   };
 
   const renderLegend = () => {
     return (
       <View style={styles.legendContainer}>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendIndicator, styles.plantingDay]} />
-          <Text style={styles.legendText}>Araw ng Pagtanim</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendIndicator, styles.harvestDay]} />
-          <Text style={styles.legendText}>Tinatayang Araw ng Pag-ani</Text>
+        <Text style={styles.legendTitle}>Gabay sa Kalendaryo:</Text>
+        <View style={styles.legendItems}>
+          <View style={styles.legendItem}>
+            <View style={styles.legendBox}>
+              <Text style={styles.legendEmoji}>🌱</Text>
+            </View>
+            <Text style={styles.legendText}>Panahon ng Pagtanim</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={styles.legendBox}>
+              <Text style={styles.legendEmoji}>🌾</Text>
+            </View>
+            <Text style={styles.legendText}>Panahon ng Pag-ani</Text>
+          </View>
         </View>
       </View>
     );
-  }
+  };
 
   const renderInfoBox = () => {
     const crop = CROP_DATA[selectedCrop];
-    const plantingMonths = crop.plantingMonths.map(m => 
-      new Date(0, m).toLocaleString('default', { month: 'long' })
-    ).join(' - ');
+    const plantingMonths = crop.plantingMonths.map(m => {
+      const months = ['Enero', 'Pebrero', 'Marso', 'Abril', 'Mayo', 'Hunyo', 
+                     'Hulyo', 'Agosto', 'Setyembre', 'Oktubre', 'Nobyembre', 'Disyembre'];
+      return months[m];
+    }).join(' - ');
 
     return (
-      <View style={styles.dateRangeInfo}>
+      <View style={styles.infoContainer}>
         <LinearGradient
-          colors={['#ecfdf5', '#f0fdf4']}
-          style={styles.dateRangeGradient}
+          colors={['#f0fdf4', '#dcfce7']}
+          style={styles.infoGradient}
         >
-          <View style={styles.dateRangeHeader}>
-            <Icon name="eco" size={32} color="#10b981" />
-            <Text style={styles.dateRangeTitle}>{crop.name}</Text>
+          <View style={styles.infoHeader}>
+            <Text style={styles.cropEmoji}>{crop.icon}</Text>
+            <Text style={styles.infoTitle}>{crop.name}</Text>
           </View>
-          <Text style={styles.dateRangeDescription}>
-            {crop.description}
-          </Text>
-          <View style={styles.harvestInfo}>
-            <View style={styles.harvestItem}>
-              <Icon name="calendar-today" size={16} color="#059669" />
-              <Text style={styles.harvestText}>Planting: {plantingMonths}</Text>
-            </View>
-            <View style={styles.harvestItem}>
-              <Icon name="schedule" size={16} color="#059669" />
-              <Text style={styles.harvestText}>Grows in {crop.growthDuration} days</Text>
-            </View>
+          
+          <View style={styles.infoSection}>
+            <Text style={styles.infoSectionTitle}>📅 Kapag Itatanim:</Text>
+            <Text style={styles.infoText}>{plantingMonths}</Text>
+          </View>
+          
+          <View style={styles.infoSection}>
+            <Text style={styles.infoSectionTitle}>⏰ Tagal ng Paglaki:</Text>
+            <Text style={styles.infoText}>{crop.growthDuration} araw</Text>
+          </View>
+          
+          <View style={styles.infoSection}>
+            <Text style={styles.infoSectionTitle}>📝 Paliwanag:</Text>
+            <Text style={styles.infoDescription}>{crop.description}</Text>
+          </View>
+          
+          <View style={styles.infoSection}>
+            <Text style={styles.infoSectionTitle}>💡 Mga Tip:</Text>
+            <Text style={styles.infoDescription}>{crop.tips}</Text>
+          </View>
+          
+          <View style={styles.infoSection}>
+            <Text style={styles.infoSectionTitle}>🏝️ Sa mga Rehiyon:</Text>
+            <Text style={styles.infoDescription}>{crop.regionalAdvice}</Text>
           </View>
         </LinearGradient>
       </View>
@@ -272,15 +317,28 @@ const Calendar = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
+      <StatusBar barStyle="light-content" backgroundColor="#15803d" />
+      
+      {/* Header */}
+      <LinearGradient
+        colors={['#15803d', '#22c55e']}
+        style={styles.header}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+      >
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Icon name="chevron-left" size={24} color="#ffffff" />
+        </TouchableOpacity>
+        
+        <Text style={styles.headerTitle}>Kalendaryo ng Ani</Text>
+        
+        <View style={{ width: 40 }} />
+      </LinearGradient>
       
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Kalendaryo ng mga Ani</Text>
-          <Text style={styles.subtitle}>Plano sa Pagtanim at Pag-aani</Text>
-        </View>
-        
         {/* Crop Selector */}
         {renderCropSelector()}
 
@@ -294,19 +352,24 @@ const Calendar = () => {
             onPress={handlePreviousMonth}
             activeOpacity={0.7}
           >
-            <Icon name="chevron-left" size={24} color="#10b981" />
+            <Icon name="chevron-left" size={24} color="#15803d" />
           </TouchableOpacity>
           
-          <View style={styles.monthContainer}>
+          <LinearGradient
+            colors={['#15803d', '#22c55e']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.monthContainer}
+          >
             <Text style={styles.monthText}>{currentMonth} {currentYear}</Text>
-          </View>
+          </LinearGradient>
           
           <TouchableOpacity 
             style={styles.navButton}
             onPress={handleNextMonth}
             activeOpacity={0.7}
           >
-            <Icon name="chevron-right" size={24} color="#10b981" />
+            <Icon name="chevron-right" size={24} color="#15803d" />
           </TouchableOpacity>
         </View>
 
@@ -327,7 +390,7 @@ const Calendar = () => {
           </View>
         </View>
 
-        {/* Selected Date Range Info */}
+        {/* Selected Crop Info */}
         {renderInfoBox()}
       </ScrollView>
 
@@ -337,15 +400,15 @@ const Calendar = () => {
           colors={['#ffffff', '#f8fafc']}
           style={styles.bottomNav}
         >
-          <TouchableOpacity style={styles.navButton} onPress={navigateToWeather}>
+          <TouchableOpacity style={styles.navButton } onPress={() => router.push('/weather')}>
             <Icon name="cloud" size={24} color="#6b7280" />
             <Text style={styles.navLabel}>Weather</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.navButton} onPress={navigateToCalendar}>
+          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/calendar')}>
             <Icon name="calendar-today" size={24} color="#6b7280" />
             <Text style={styles.navLabel}>Calendar</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.homeButton} onPress={navigateToHome}>
+          <TouchableOpacity style={styles.homeButton} onPress={() => router.push('/dashboard')}>
             <LinearGradient
               colors={['#10b981', '#059669']}
               style={styles.homeButtonGradient}
@@ -353,11 +416,11 @@ const Calendar = () => {
               <Icon name="home" size={28} color="#ffffff" />
             </LinearGradient>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.navButton} onPress={navigateToShop}>
+          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/catalog')}>
             <Icon name="payments" size={24} color="#6b7280" />
-            <Text style={styles.navLabel}>Loan</Text>
+            <Text style={styles.navLabel} onPress={() => router.push('/catalog')}>Loan</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.navButton} onPress={navigateToAlerts}>
+          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/journal')}>
             <Icon name="book" size={24} color="#6b7280" />
             <Text style={styles.navLabel}>Journal</Text>
           </TouchableOpacity>
@@ -372,62 +435,134 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8fafc',
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 0 : 20,
+    paddingBottom: 20,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    flex: 1,
+    textAlign: 'center',
+  },
   scrollView: {
     flex: 1,
   },
   content: {
-    paddingHorizontal: 20,
-    paddingTop: 40,
-    paddingBottom: 120, // To make space for bottom nav
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 120,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 30,
+  cropSelectorContainer: {
+    marginBottom: 24,
   },
-  title: {
-    fontSize: 24,
+  cropSelectorTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#10b981',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#6b7280',
-    fontWeight: '500',
-  },
-  cropSelector: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 20,
-    gap: 10,
+    color: '#15803d',
+    marginBottom: 12,
+    textAlign: 'center',
   },
   cropSelectorScrollView: {
-    marginBottom: 20,
+    marginBottom: 0,
   },
   cropSelectorContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 20,
+    gap: 12,
+    paddingHorizontal: 4,
   },
   cropButton: {
-    paddingVertical: 8,
+    alignItems: 'center',
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    borderWidth: 1,
+    borderRadius: 16,
+    backgroundColor: '#ffffff',
+    borderWidth: 2,
     borderColor: '#e5e7eb',
+    minWidth: 80,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   selectedCropButton: {
-    backgroundColor: '#10b981',
-    borderColor: '#10b981',
+    backgroundColor: '#15803d',
+    borderColor: '#15803d',
+  },
+  cropIcon: {
+    fontSize: 24,
+    marginBottom: 4,
   },
   cropButtonText: {
     color: '#374151',
     fontWeight: '600',
+    fontSize: 12,
   },
   selectedCropButtonText: {
-    color: '#fff',
+    color: '#ffffff',
+  },
+  legendContainer: {
+    marginBottom: 24,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  legendTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#15803d',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  legendItems: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  legendItem: {
+    alignItems: 'center',
+  },
+  legendBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0fdf4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  legendEmoji: {
+    fontSize: 20,
+  },
+  legendText: {
+    fontSize: 12,
+    color: '#374151',
+    textAlign: 'center',
+    fontWeight: '600',
   },
   monthNavigation: {
     flexDirection: 'row',
@@ -436,48 +571,31 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   navButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    backgroundColor: '#ffffff',
-    justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    justifyContent: 'center',
+    flex: 1,
   },
   monthContainer: {
-    flex: 1,
-    marginHorizontal: 20,
+    flex: 5,
+    marginHorizontal: 16,
     paddingVertical: 16,
-    paddingHorizontal: 25,
-    borderRadius: 16,
-    backgroundColor: '#ffffff',
+    borderRadius: 15,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
   },
   monthText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1f2937',
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
   },
   calendarContainer: {
-    marginBottom: 20,
+    marginBottom: 24,
     backgroundColor: '#ffffff',
     borderRadius: 20,
     padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
     elevation: 5,
   },
   weekDaysHeader: {
@@ -490,102 +608,103 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   weekDayText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6b7280',
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#15803d',
   },
   calendarGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    rowGap: 7,
+    rowGap: 8,
   },
   calendarDay: {
-    width: '14.28%',
+    width: '13.5%',
+    height: 0,
     aspectRatio: 1,
-    borderRadius: 12,
+    borderRadius: 8,
     backgroundColor: '#f9fafb',
     borderWidth: 1,
     borderColor: '#e5e7eb',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 4,
+    position: 'relative',
   },
   plantingDay: {
-    backgroundColor: '#34d399', // A nice green for planting
-    borderColor: '#10b981',
-    shadowColor: '#10b981',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
+    backgroundColor: '#bbf7d0',
+    borderColor: '#22c55e',
   },
   harvestDay: {
-    backgroundColor: '#fbbf24', // A golden yellow for harvest
+    backgroundColor: '#fef3c7',
     borderColor: '#f59e0b',
-    shadowColor: '#f59e0b',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
   },
   emptyDay: {
-    width: '14.28%',
+    width: '13.5%',
     aspectRatio: 1,
   },
   dayText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: 'bold',
     color: '#374151',
   },
   selectedDayText: {
-    color: '#ffffff',
-    fontWeight: '700',
+    color: '#15803d',
+    fontWeight: 'bold',
   },
-  dateRangeInfo: {
+  plantingIndicator: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+  },
+  harvestIndicator: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+  },
+  indicatorText: {
+    fontSize: 8,
+  },
+  infoContainer: {
     marginBottom: 20,
   },
-  dateRangeGradient: {
+  infoGradient: {
     borderRadius: 20,
-    padding: 24,
+    padding: 20,
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: '#22c55e',
   },
-  dateRangeHeader: {
+  infoHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 20,
   },
-  dateRangeTitle: {
-    fontSize: 28,
+  cropEmoji: {
+    fontSize: 32,
+    marginRight: 12,
+  },
+  infoTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#10b981',
-    marginLeft: 12,
+    color: '#15803d',
   },
-  dateRangeDescription: {
-    fontSize: 16,
-    color: '#374151',
-    textAlign: 'left',
-    lineHeight: 24,
+  infoSection: {
     marginBottom: 16,
   },
-  harvestInfo: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: 8,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#d1fae5',
+  infoSectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#15803d',
+    marginBottom: 4,
   },
-  harvestItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  harvestText: {
-    fontSize: 14,
-    color: '#059669',
+  infoText: {
+    fontSize: 16,
+    color: '#374151',
     fontWeight: '600',
-    marginLeft: 6,
+  },
+  infoDescription: {
+    fontSize: 14,
+    color: '#4b5563',
+    lineHeight: 20,
   },
   bottomNavContainer: {
     position: 'absolute',
@@ -600,16 +719,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderRadius: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    borderRadius: 28,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 12,
   },
-  navButton: {
+  navItem: {
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
@@ -621,8 +740,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   activeNavLabel: {
-    color: '#10b981',
-    fontWeight: '600',
+    color: '#15803d',
+    fontWeight: 'bold',
   },
   homeButton: {
     alignItems: 'center',
@@ -639,26 +758,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
-  },
-  legendContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 20,
-    gap: 20,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  legendIndicator: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    marginRight: 8,
-  },
-  legendText: {
-    fontSize: 12,
-    color: '#374151',
   },
 });
 

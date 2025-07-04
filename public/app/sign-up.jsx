@@ -5,6 +5,7 @@ import * as Yup from 'yup';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState } from 'react'; // Import useState
 import { MaterialCommunityIcons } from '@expo/vector-icons'; // Import an icon library, make sure you have it installed: expo install @expo/vector-icons
+import { LinearGradient } from 'expo-linear-gradient';
 
 const SignUpSchema = Yup.object().shape({
   name: Yup.string()
@@ -45,7 +46,7 @@ export default function SignUp() {
 
   const handleSignUp = async (values, { setSubmitting }) => {
     try {
-      const response = await fetch('http://10.8.10.242:3000/api/signup', {
+      const response = await fetch('http://192.168.100.2:3000/api/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -146,14 +147,21 @@ export default function SignUp() {
               ))}
 
               <TouchableOpacity
-                style={[styles.button, isSubmitting && styles.buttonDisabled]}
                 onPress={handleSubmit}
                 activeOpacity={0.8}
                 disabled={isSubmitting}
+                style={styles.primaryButtonWrapper}
               >
-                <Text style={styles.buttonText}>
-                  {isSubmitting ? 'Nagsisign-up...' : 'Mag Sign-up'}
-                </Text>
+                <LinearGradient
+                  colors={isSubmitting ? ['#a8b3a8', '#a8b3a8'] : ['#15803d', '#22c55e']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.primaryButton}
+                >
+                  <Text style={styles.buttonText}>
+                    {isSubmitting ? 'Nagsisign-up...' : 'Mag Sign-up'}
+                  </Text>
+                </LinearGradient>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -269,6 +277,24 @@ const styles = StyleSheet.create({
   },
   passwordToggle: {
     paddingHorizontal: 15, // Add padding to the icon for better touch area
+  },
+  primaryButtonWrapper: {
+    marginTop: 20,
+    borderRadius: 12,
+    shadowColor: '#22c55e',
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  primaryButton: {
+    height: 56,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   button: {
     height: 56,

@@ -12,11 +12,14 @@ import {
   TextInput,
   Alert,
   Dimensions,
+  FlatList,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Picker } from '@react-native-picker/picker';
+import { Picker } from '@react-native-picker/picker'; 
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
 
@@ -33,6 +36,7 @@ const cropOptions = [
 const ProductDetailsPage = ({ route }) => {
   // Modal state
   const [isLoanModalVisible, setIsLoanModalVisible] = useState(false);
+  const [isReviewModalVisible, setIsReviewModalVisible] = useState(false);
   const [selectedSize, setSelectedSize] = useState('1 KG');
   const [loanFormData, setLoanFormData] = useState({
     pangalan: '',
@@ -48,6 +52,39 @@ const ProductDetailsPage = ({ route }) => {
   const [totalPrice, setTotalPrice] = useState(1500);
   const [creditLimit, setCreditLimit] = useState(null);
 
+  // Review state
+  const [reviews, setReviews] = useState([
+    {
+      id: 1,
+      userName: 'Maria Santos',
+      rating: 5,
+      comment: 'Napakaganda ng quality ng palay seeds! Mataas ang ani na nakuha namin. Highly recommended!',
+      date: '2024-12-15',
+      verified: true,
+    },
+    {
+      id: 2,
+      userName: 'Juan Dela Cruz',
+      rating: 4,
+      comment: 'Magandang produkto, pero medyo matagal ang delivery. Overall satisfied pa rin.',
+      date: '2024-12-10',
+      verified: true,
+    },
+    {
+      id: 3,
+      userName: 'Ana Reyes',
+      rating: 5,
+      comment: 'Sulit na sulit! Malaking tulong sa aming sakahan. Salamat!',
+      date: '2024-12-05',
+      verified: false,
+    },
+  ]);
+  const [newReview, setNewReview] = useState({
+    rating: 5,
+    comment: '',
+  });
+  const [currentUser, setCurrentUser] = useState({ name: '' });
+
   // Use product object from route params, fallback to default
   const defaultProduct = {
     id: 1,
@@ -62,6 +99,8 @@ const ProductDetailsPage = ({ route }) => {
     description: 'Ang buto ng palay ay de-kalidad na butil na ginagamit para sa pagtatanim ng masaganang ani ng bigas. Nakakatulong ito sa pagpapaunlad ng kabuhayan ng mga magsasaka at sa pagtugon sa pangangailangan ng pagkain.',
     price: 500.00,
     sizes: ['500g', '1 KG', '2 KG', '5 KG', '10 KG', '25 KG'],
+    averageRating: 4.7,
+    totalReviews: 23,
   };
   const productData = { ...defaultProduct, ...(route?.params || {}) };
 
@@ -91,12 +130,97 @@ const ProductDetailsPage = ({ route }) => {
     setCreditLimit(null);
   };
 
+  const handleOpenReviewModal = () => {
+    setIsReviewModalVisible(true);
+  };
+
+  const handleCloseReviewModal = () => {
+    setIsReviewModalVisible(false);
+    setNewReview({
+      rating: 5,
+      comment: '',
+    });
+  };
+
+  const handleSubmitReview = () => {
+    if (!newReview.comment.trim()) {
+      Alert.alert('Error', 'Pakilagay ang inyong review comment.');
+      return;
+    }
+
+    const review = {
+      id: reviews.length + 1,
+      userName: currentUser.name || 'Anonymous User',
+      rating: newReview.rating,
+      comment: newReview.comment,
+      date: new Date().toISOString().split('T')[0],
+      verified: true,
+    };
+
+    setReviews([review, ...reviews]);
+    Alert.alert('Salamat!', 'Ang inyong review ay naipadala na.', [
+      {
+        text: 'OK',
+        onPress: handleCloseReviewModal,
+      },
+    ]);
+  };
+
+  const renderStars = (rating, size = 16, color = '#FFD700') => {
+    return (
+      <View style={styles.starsContainer}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Icon
+            key={star}
+            name={star <= rating ? 'star' : 'star-border'}
+            size={size}
+            color={color}
+          />
+        ))}
+      </View>
+    );
+  };
+
+  const renderInteractiveStars = (rating, onPress) => {
+    return (
+      <View style={styles.starsContainer}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <TouchableOpacity key={star} onPress={() => onPress(star)}>
+            <Icon
+              name={star <= rating ? 'star' : 'star-border'}
+              size={24}
+              color="#FFD700"
+            />
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
+
+  const renderReviewItem = ({ item }) => (
+    <View style={styles.reviewItem}>
+      <View style={styles.reviewHeader}>
+        <View style={styles.reviewUserInfo}>
+          <Text style={styles.reviewUserName}>{item.userName}</Text>
+          {item.verified && (
+            <Icon name="verified" size={16} color="#87BE42" style={styles.verifiedIcon} />
+          )}
+        </View>
+        <Text style={styles.reviewDate}>{item.date}</Text>
+      </View>
+      <View style={styles.reviewRating}>
+        {renderStars(item.rating, 14)}
+      </View>
+      <Text style={styles.reviewComment}>{item.comment}</Text>
+    </View>
+  );
+
   // Utility functions
   const getApiUrl = () => {
     if (__DEV__) {
-      return 'http://10.8.10.242:3000';
+      return 'http://192.168.100.2:3000';
     } else {
-      return 'https://10.8.10.242:3000';
+      return 'https://192.168.100.2:3000';
     }
   };
 
@@ -132,6 +256,7 @@ const ProductDetailsPage = ({ route }) => {
             address: data.user.location || '',
           }));
           setCreditLimit(data.user.creditLimit || 5000);
+          setCurrentUser({ name: data.user.name || '' });
         }
       } catch (error) {
         console.error('Failed to fetch user profile:', error);
@@ -208,22 +333,28 @@ const ProductDetailsPage = ({ route }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-
+      <StatusBar barStyle="light-content" backgroundColor="#15803d" />
       {/* Header */}
-      <View style={styles.header}>
+      <LinearGradient
+              colors={['#15803d', '#22c55e']}
+              style={styles.header}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
         <TouchableOpacity
           style={styles.headerButton}
           onPress={() => router.back()}
         >
           <Icon name="chevron-left" size={24} color="#fff" />
+          <View style={{ width: 40 }} />
         </TouchableOpacity>
+        
+        <Text style={styles.headerTitle}>Detalye</Text>
 
         <TouchableOpacity style={styles.headerButton}>
           <Icon name="shopping-bag" size={24} color="#fff" />
         </TouchableOpacity>
-      </View>
-
+      </LinearGradient>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Product Images */}
         <View style={styles.imageContainer}>
@@ -257,6 +388,19 @@ const ProductDetailsPage = ({ route }) => {
             <Text style={styles.price}>₱{productData.price.toFixed(0)} / {selectedSize}</Text>
           </View>
 
+          {/* Rating Summary */}
+          <View style={styles.ratingContainer}>
+            <View style={styles.ratingInfo}>
+              {renderStars(productData.averageRating, 18)}
+              <Text style={styles.ratingText}>
+                {productData.averageRating} ({productData.totalReviews} reviews)
+              </Text>
+            </View>
+            <TouchableOpacity style={styles.writeReviewButton} onPress={handleOpenReviewModal}>
+              <Text style={styles.writeReviewText}>Sumulat ng Review</Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Quantity */}
           <Text style={styles.sectionTitle}>Bilang</Text>
           <View style={styles.sizesContainer}>
@@ -282,6 +426,26 @@ const ProductDetailsPage = ({ route }) => {
           {/* Description */}
           <Text style={styles.sectionTitle}>Description</Text>
           <Text style={styles.description}>{productData.description}</Text>
+
+          {/* Reviews Section */}
+          <Text style={styles.sectionTitle}>Mga Review</Text>
+          <View style={styles.reviewsContainer}>
+            <FlatList
+              data={reviews.slice(0, 3)} // Show only first 3 reviews
+              renderItem={renderReviewItem}
+              keyExtractor={(item) => item.id.toString()}
+              scrollEnabled={false}
+              ItemSeparatorComponent={() => <View style={styles.reviewSeparator} />}
+            />
+            {reviews.length > 3 && (
+              <TouchableOpacity style={styles.viewAllReviewsButton}>
+                <Text style={styles.viewAllReviewsText}>
+                  Tignan ang lahat ng {reviews.length} reviews
+                </Text>
+                <Icon name="chevron-right" size={16} color="#87BE42" />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* Bypass Buttons */}
@@ -302,20 +466,27 @@ const ProductDetailsPage = ({ route }) => {
 
       {/* Fixed Bottom Actions */}
       <View style={styles.bottomActions}>
-        <TouchableOpacity
-          style={styles.addToCartButton}
-          onPress={handleAddToCart}
-        >
-          <Icon name="shopping-cart" size={20} color="#666" />
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.addToCartButton}
+            onPress={handleAddToCart}
+          >
+            <Icon name="shopping-cart" size={20} color="#666" />
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.buyButton}
-          onPress={handleLoan}
-        >
-          <Text style={styles.buyButtonText}>I-Loan Ngayon</Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            onPress={handleLoan}
+          >
+            <LinearGradient
+              colors={['#15803d', '#22c55e']}
+              style={styles.buyButton}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Text style={styles.buyButtonText}>I-Loan Ngayon</Text>
+            <View style={{ width: 325 }} />
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
 
       {/* Loan Application Modal */}
       <Modal
@@ -476,10 +647,90 @@ const ProductDetailsPage = ({ route }) => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.submitButton}
               onPress={handleSubmitLoan}
             >
-              <Text style={styles.submitButtonText}>Isumite</Text>
+              <LinearGradient
+                colors={['#15803d', '#22c55e']}
+                style={styles.submitButton}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={styles.submitButtonText}>Isumite</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      {/* Review Modal */}
+      <Modal
+        visible={isReviewModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={handleCloseReviewModal}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={handleCloseReviewModal}>
+              <Icon name="close" size={24} color="#374151" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Magsulat ng Review</Text>
+            <View style={{ width: 24 }} />
+          </View>
+
+          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+            <Text style={styles.modalSubtitle}>
+              Para sa {productData.name}
+            </Text>
+
+            <View style={styles.formContainer}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Rating *</Text>
+                <View style={styles.ratingInputContainer}>
+                  {renderInteractiveStars(newReview.rating, (rating) => 
+                    setNewReview(prev => ({ ...prev, rating }))
+                  )}
+                  <Text style={styles.ratingLabel}>
+                    {newReview.rating === 1 ? 'Napakasama' :
+                     newReview.rating === 2 ? 'Masama' :
+                     newReview.rating === 3 ? 'Okay lang' :
+                     newReview.rating === 4 ? 'Maganda' : 'Napakaganda'}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Inyong Review *</Text>
+                <TextInput
+                  style={[styles.textInput, styles.reviewTextArea]}
+                  value={newReview.comment}
+                  onChangeText={(value) => setNewReview(prev => ({ ...prev, comment: value }))}
+                  placeholder="Isulat ang inyong karanasan sa produktong ito..."
+                  placeholderTextColor="#9ca3af"
+                  multiline={true}
+                  numberOfLines={5}
+                />
+              </View>
+
+              <Text style={styles.requiredNote}>
+                * Mga kinakailangang impormasyon
+              </Text>
+            </View>
+          </ScrollView>
+
+          <View style={styles.modalFooter}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={handleCloseReviewModal}
+            >
+              <Text style={styles.cancelButtonText}>Kanselahin</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={handleSubmitReview}
+            >
+              <Text style={styles.submitButtonText}>Ipadala</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -498,22 +749,27 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 10,
-  },
-  headerButton: {
-    width: 48,
-    height: 48,
-    backgroundColor: '#87BE42',
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingTop: Platform.OS === 'ios' ? 0 : 20,
+    paddingBottom: 20,
+    elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 4,
   },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  headerButton: {
+    width: 40,
+    height: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+},
   scrollView: {
     flex: 1,
   },
@@ -556,32 +812,64 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10, // Adjusted for hierarchy
+    marginBottom: 10,
   },
   productName: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#000',
-    flexShrink: 1, // Allow text to wrap
-    marginRight: 10, // Space between name and price
+    flexShrink: 1,
+    marginRight: 10,
   },
   price: {
-    fontSize: 24, // Adjusted font size for side-by-side
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#000',
-    textAlign: 'right', // Align price to the right
+    textAlign: 'right',
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingVertical: 10,
+  },
+  ratingInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  starsContainer: {
+    flexDirection: 'row',
+    marginRight: 8,
+  },
+  ratingText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  writeReviewButton: {
+    backgroundColor: '#f0f9ff',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#87BE42',
+  },
+  writeReviewText: {
+    fontSize: 14,
+    color: '#87BE42',
+    fontWeight: '500',
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#000',
     marginBottom: 15,
-    marginTop: 15, // Added some top margin for sections
+    marginTop: 15,
   },
   sizesContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 20, // Adjusted for hierarchy
+    marginBottom: 20,
     gap: 10,
   },
   sizeButton: {
@@ -608,7 +896,85 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     lineHeight: 24,
-    marginBottom: 20, // Adjusted for new bypass buttons
+    marginBottom: 20,
+  },
+  reviewsContainer: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+  },
+  reviewItem: {
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  reviewUserInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  reviewUserName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginRight: 4,
+  },
+  verifiedIcon: {
+    marginLeft: 4,
+  },
+  reviewDate: {
+    fontSize: 12,
+    color: '#9ca3af',
+  },
+  reviewRating: {
+    marginBottom: 8,
+  },
+  reviewComment: {
+    fontSize: 14,
+    color: '#374151',
+    lineHeight: 20,
+  },
+  reviewSeparator: {
+    height: 1,
+    backgroundColor: '#e5e7eb',
+    marginVertical: 8,
+  },
+  viewAllReviewsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#87BE42',
+  },
+  viewAllReviewsText: {
+    fontSize: 14,
+    color: '#87BE42',
+    fontWeight: '500',
+    marginRight: 4,
+  },
+  ratingInputContainer: {
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  ratingLabel: {
+    fontSize: 16,
+    color: '#374151',
+    fontWeight: '500',
+    marginTop: 8,
+  },
+  reviewTextArea: {
+    height: 120,
+    textAlignVertical: 'top',
   },
   bypassButtonsContainer: {
     paddingHorizontal: 20,
@@ -616,14 +982,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   bypassButton: {
-    backgroundColor: '#ADD8E6', // Light blue for bypass buttons
+    backgroundColor: '#ADD8E6',
     borderRadius: 8,
     paddingVertical: 12,
     alignItems: 'center',
-    marginBottom: 10, // Space between bypass buttons
+    marginBottom: 10,
   },
   bypassButtonText: {
-    color: '#00008B', // Dark blue text
+    color: '#00008B',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -632,27 +998,26 @@ const styles = StyleSheet.create({
   },
   bottomActions: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 20,
     backgroundColor: '#ffffff',
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
-    gap: 15,
   },
   addToCartButton: {
     width: 50,
     height: 50,
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 25,
+    borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fff',
   },
   buyButton: {
     flex: 1,
-    backgroundColor: '#87BE42',
-    borderRadius: 25,
+    borderRadius: 15,
     paddingVertical: 15,
     justifyContent: 'center',
     alignItems: 'center',
@@ -732,6 +1097,7 @@ const styles = StyleSheet.create({
   },
   modalFooter: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderTopWidth: 1,
@@ -745,6 +1111,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 12,
     backgroundColor: '#ffffff',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cancelButtonText: {
     fontSize: 16,
@@ -754,27 +1122,16 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     flex: 1,
-    backgroundColor: '#87BE42',
     borderRadius: 8,
     paddingVertical: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   submitButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#ffffff',
     textAlign: 'center',
-  },
-  statusContainer: {
-    margin: 16,
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statusText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    letterSpacing: 1,
   },
 });
 

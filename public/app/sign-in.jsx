@@ -1,8 +1,9 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, Alert, Image } from 'react-native';
 import { router } from 'expo-router';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons'; // Import an icon library
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function SignIn() {
   const [form, setForm] = useState({ name: '', password: '' });
@@ -17,7 +18,7 @@ export default function SignIn() {
         const token = await AsyncStorage.getItem('authToken');
         if (token) {
           // Check farm
-          const farmRes = await fetch('http://10.8.10.242:3000/api/farms/my', {
+          const farmRes = await fetch('http://192.168.100.2:3000/api/farms/my', {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           const farmData = await farmRes.json();
@@ -48,7 +49,7 @@ export default function SignIn() {
     try {
       // Replace 'YOUR_LOCAL_IP' with your actual local IP address
       // You can find it by running 'ipconfig' (Windows) or 'ifconfig' (Mac/Linux)
-      const response = await fetch('http://10.8.10.242:3000/api/signin', {
+      const response = await fetch('http://192.168.100.2:3000/api/signin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -63,7 +64,7 @@ export default function SignIn() {
         await AsyncStorage.setItem('authToken', data.token);
         // Check if user has farm data
         try {
-          const farmRes = await fetch('http://10.8.10.242:3000/api/farms/my', {
+          const farmRes = await fetch('http://192.168.100.2:3000/api/farms/my', {
             headers: { 'Authorization': `Bearer ${data.token}` }
           });
           const farmData = await farmRes.json();
@@ -96,10 +97,13 @@ export default function SignIn() {
 
       {/* Logo Section */}
       <View style={styles.logoContainer}>
-        <View style={styles.logoPlaceholder}>
-          <Text style={styles.logoText}>🌱</Text>
+        <View style={styles.logoWrapper}>
+          <Image 
+            source={require('../assets/Aniwise2.png')} 
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
-        <Text style={styles.brandName}>AniWise</Text>
       </View>
 
       {/* Header */}
@@ -146,14 +150,21 @@ export default function SignIn() {
         </View>
 
         <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleSignIn}
           activeOpacity={0.8}
           disabled={loading}
+          style={styles.primaryButtonWrapper}
         >
-          <Text style={styles.buttonText}>
-            {loading ? 'Nagsisign-in...' : 'Mag Sign-in'}
-          </Text>
+          <LinearGradient
+            colors={loading ? ['#a8b3a8', '#a8b3a8'] : ['#15803d', '#22c55e']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.primaryButton}
+          >
+            <Text style={styles.buttonText}>
+              {loading ? 'Nagsisign-in...' : 'Mag Sign-in'}
+            </Text>
+          </LinearGradient>
         </TouchableOpacity>
       </View>
 
@@ -181,26 +192,12 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 20,
     marginTop: 20,
   },
-  logoPlaceholder: {
-    width: 80,
-    height: 80,
-    backgroundColor: '#87BE42',
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  logoText: {
-    fontSize: 36,
-    color: '#ffffff',
-  },
-  brandName: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#2d5016',
+  logo: {
+    width: 170,
+    height: 170,
   },
   header: {
     fontSize: 28,
@@ -251,16 +248,23 @@ const styles = StyleSheet.create({
   passwordToggle: {
     paddingHorizontal: 15, // Add padding to the icon for better touch area
   },
-  button: {
+  primaryButtonWrapper: {
+    marginTop: 20,
+    borderRadius: 12,
+    shadowColor: '#22c55e',
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  primaryButton: {
     height: 56,
-    backgroundColor: '#87BE42',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
-  },
-  buttonDisabled: {
-    backgroundColor: '#a8b3a8',
   },
   buttonText: {
     color: '#ffffff',

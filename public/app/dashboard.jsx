@@ -92,13 +92,13 @@ const Dashboard = () => {
           return;
         }
         // Fetch user profile (for greeting)
-        const profileRes = await fetch('http://10.8.10.242:3000/api/profile', {
+        const profileRes = await fetch('http://192.168.100.2:3000/api/profile', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const profileData = await profileRes.json();
         if (profileData.success) setUser(profileData.user);
         // Fetch user's farms
-        const farmRes = await fetch('http://10.8.10.242:3000/api/farms/my', {
+        const farmRes = await fetch('http://192.168.100.2:3000/api/farms/my', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const farmData = await farmRes.json();
@@ -157,7 +157,7 @@ const Dashboard = () => {
       try {
         const token = await AsyncStorage.getItem('authToken');
         if (!token) return;
-        await fetch('http://10.8.10.242:3000/api/profile/credit', {
+        await fetch('http://192.168.100.2:3000/api/profile/credit', {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -222,7 +222,9 @@ const Dashboard = () => {
       >
         {/* Header */}
         <LinearGradient
-          colors={['#14532d', '#166534', '#15803d']}
+          colors={['#15803d', '#22c55e']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
           style={styles.headerGradient}
         >
           <View style={styles.header}>
@@ -230,7 +232,7 @@ const Dashboard = () => {
               <View style={styles.profileImageContainer}>
                 <Image
                   source={{
-                    uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&h=60&fit=crop&crop=face&auto=format'
+                    uri: 'https://images.unsplash.com/photo-1710563849800-73af5bfc9f36?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
                   }}
                   style={styles.profileImage}
                 />
@@ -443,7 +445,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 40,
+    paddingTop: 25,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -842,7 +844,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   bottomSpacer: {
-    height: 100,
+    height: 120,
   },
   bottomNavContainer: {
     position: 'absolute',
@@ -857,14 +859,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderRadius: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    borderRadius: 28,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 12,
   },
   navButton: {
     alignItems: 'center',

@@ -6,11 +6,14 @@ import {
   SafeAreaView,
   TouchableOpacity,
   StatusBar,
+  Platform,
   Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import MapView, { Marker } from 'react-native-maps';
+import { LinearGradient } from 'expo-linear-gradient';
+
 
 const ProductPickup = () => {
   const [selectedLocation, setSelectedLocation] = useState(null);
@@ -35,9 +38,14 @@ const ProductPickup = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f1f5f9" />
+      <StatusBar barStyle="light-content" backgroundColor="#15803d" />
 
-      <View style={styles.header}>
+      <LinearGradient
+          colors={['#15803d', '#22c55e']}
+          style={styles.header}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        >
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => router.back()}
@@ -46,8 +54,8 @@ const ProductPickup = () => {
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>Piliin ang Lugar ng Pickup</Text>
-        <View style={{ width: 48 }} />
-      </View>
+        <View style={{ width: 40 }} />
+      </LinearGradient>
 
       <View style={styles.mapContainer}>
         <MapView
@@ -74,10 +82,18 @@ const ProductPickup = () => {
         ) : (
           <Text style={styles.selectPrompt}>Pindutin ang mapa upang pumili ng lugar. Siguraduhing ito ay malapit sa inyo at madaling puntahan.</Text>
         )}
-
-        <TouchableOpacity style={styles.primaryButton} onPress={handlePickupConfirmed}>
+        
+        <TouchableOpacity onPress={handlePickupConfirmed}>
+          <LinearGradient
+                        colors={['#15803d', '#22c55e']}
+                        style={styles.primaryButton}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                      >
           <Icon name="check" size={20} color="#ffffff" />
           <Text style={styles.primaryButtonText}>Kumpirmahin ang Pickup</Text>
+          <View style={{ width: 135 }} />
+          </LinearGradient>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -94,31 +110,32 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
-  },
-  backButton: {
-    width: 48,
-    height: 48,
-    backgroundColor: '#87BE42',
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingTop: Platform.OS === 'ios' ? 0 : 20,
+    paddingBottom: 20,
+    elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 4,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#0f172a',
+    color: '#ffffff',
   },
   mapContainer: {
     flex: 1,
     marginHorizontal: 20,
     marginBottom: 16,
+    marginTop: 16,
     borderRadius: 16,
     overflow: 'hidden',
   },
@@ -153,6 +170,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
+    paddingLeft: 140,
   },
   primaryButtonText: {
     fontSize: 16,

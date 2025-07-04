@@ -7,9 +7,11 @@ import {
   SafeAreaView,
   TouchableOpacity,
   StatusBar,
+  Platform,
   Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 
 const SimpleRepaymentPage = ({ route }) => {
@@ -91,10 +93,15 @@ const SimpleRepaymentPage = ({ route }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
+      <StatusBar barStyle="dark-content" backgroundColor="#15803d" />
       
       {/* Simple Header */}
-      <View style={styles.header}>
+        <LinearGradient
+                colors={['#15803d', '#22c55e']}
+                style={styles.header}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+        >
         <TouchableOpacity 
           style={styles.backBtn}
           onPress={() => router.back()}
@@ -104,7 +111,7 @@ const SimpleRepaymentPage = ({ route }) => {
         
         <Text style={styles.headerText}>Bayad ng Utang</Text>
         <View style={{width: 40}} />
-      </View>
+        </LinearGradient>
 
       <ScrollView style={styles.content}>
         {/* Friendly Greeting */}
@@ -244,30 +251,29 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-  },
-  backBtn: {
-    width: 48,
-    height: 48,
-    backgroundColor: '#87BE42',
-    borderRadius: 16,
-    justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 0 : 20,
+    paddingBottom: 20,
+    elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 4,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#1e293b',
+    color: '#ffffff',
   },
   content: {
     flex: 1,
