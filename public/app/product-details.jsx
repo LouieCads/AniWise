@@ -98,7 +98,7 @@ const ProductDetailsPage = ({ route }) => {
     ],
     description: 'Ang buto ng palay ay de-kalidad na butil na ginagamit para sa pagtatanim ng masaganang ani ng bigas. Nakakatulong ito sa pagpapaunlad ng kabuhayan ng mga magsasaka at sa pagtugon sa pangangailangan ng pagkain.',
     price: 500.00,
-    sizes: ['500g', '1 KG', '2 KG', '5 KG', '10 KG', '25 KG'],
+    sizes: ['1 Sako', '2 Sako', '5 Sako', '10 Sako', '25 Sako', '50 Sako'],
     averageRating: 4.7,
     totalReviews: 23,
   };
@@ -448,7 +448,7 @@ const ProductDetailsPage = ({ route }) => {
           </View>
         </View>
 
-        {/* Bypass Buttons */}
+        {/* Bypass Buttons
         <View style={styles.bypassButtonsContainer}>
           <TouchableOpacity style={styles.bypassButton} onPress={() => router.push('product-repayment')}>
             <Text style={styles.bypassButtonText}>Go to Product Repayment</Text>
@@ -459,7 +459,7 @@ const ProductDetailsPage = ({ route }) => {
           <TouchableOpacity style={styles.bypassButton} onPress={() => router.push('product-pickup')}>
             <Text style={styles.bypassButtonText}>Go to Product Pickup</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
@@ -870,15 +870,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     marginBottom: 20,
-    gap: 10,
+    gap: 7,
   },
   sizeButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
     borderWidth: 1,
     borderColor: '#15803d',
     borderRadius: 8,
-    minWidth: 80,
+    width: 90,
     alignItems: 'center',
   },
   selectedSizeButton: {
@@ -994,7 +994,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   bottomSpacer: {
-    height: 100,
+    height: 10,
   },
   bottomActions: {
     flexDirection: 'row',
@@ -1098,6 +1098,7 @@ const styles = StyleSheet.create({
   modalFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderTopWidth: 1,
@@ -1126,6 +1127,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    width: 180,
   },
   submitButtonText: {
     fontSize: 16,

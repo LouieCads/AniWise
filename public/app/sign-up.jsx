@@ -164,7 +164,7 @@ export default function SignUp() {
                 </LinearGradient>
               </TouchableOpacity>
 
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 style={[styles.button, { backgroundColor: '#6c757d', marginTop: 10 }]}
                 onPress={() => router.push('/mapping')}
               >
@@ -176,7 +176,7 @@ export default function SignUp() {
                 onPress={() => router.push('/tutorial')}
               >
                 <Text style={styles.buttonText}>Skip to Dashboard</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
           )}
         </Formik>
