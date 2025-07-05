@@ -258,6 +258,7 @@ router.post("/recommend-crops", authenticateToken, async (req, res) => {
         ]
       }
 
+      Pangalan lang mismo ng mga pananim/crops ang ilagay at hindi mga pangalan ng mga ulam/meals/dishes at mga products. 
       Iwasan ang mahahabang sagot. Simplehan lang para madaling maintindihan ng magsasaka.`;
 
     const completion = await openai.chat.completions.create({

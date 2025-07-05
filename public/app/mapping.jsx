@@ -64,14 +64,14 @@ const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY || '98bb67c7b4f0e326
 export default function Mapping() {
   const [farmLocation, setFarmLocation] = useState('');
   const [coordinates, setCoordinates] = useState({
-    latitude: 14.2393, // Default to Silang, Cavite, Philippines
-    longitude: 120.9769,
+    latitude: 14.5547, // Default to Drapers Startup House, Poblacion, Makati, Philippines
+    longitude: 121.0244,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
   const [markerCoordinate, setMarkerCoordinate] = useState({
-    latitude: 14.2393,
-    longitude: 120.9769,
+    latitude: 14.5547,
+    longitude: 121.0244,
   });
   const [isMapReady, setIsMapReady] = useState(false);
   const [soilData, setSoilData] = useState(null);
@@ -445,8 +445,8 @@ export default function Mapping() {
           onPress: async () => {
             // In a real app, use Expo Location or react-native-geolocation-service
             const currentCoords = {
-              latitude: 14.2393 + (Math.random() - 0.01), // Silang, Cavite
-              longitude: 120.9769 + (Math.random() - 0.01), // Silang, Cavite
+              latitude: 14.5547 + (Math.random() - 0.01), // Drapers Startup House, Poblacion, Makati
+              longitude: 121.0244 + (Math.random() - 0.01), // Drapers Startup House, Poblacion, Makati
             };
             
             console.log('Current location:', currentCoords);
@@ -757,7 +757,7 @@ export default function Mapping() {
         <View style={styles.welcomeSection}>
           <Text style={styles.welcomeTitle}>Tukuyin ang Inyong Farm</Text>
           <Text style={styles.welcomeSubtitle}>
-            Para mas mapadali ang delivery at mga serbisyo, paki-input ang eksaktong lokasyon ng inyong farm.
+            Para mas mapadali ang delivery at mga serbisyo, paki-input ang eksaktong lokasyon ng inyong farm (e.g., Drapers Startup House, Poblacion, Makati).
           </Text>
         </View>
 
