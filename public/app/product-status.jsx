@@ -23,14 +23,14 @@ const OrderStatusTracker = ({ route }) => {
   const [orderData] = useState({
     orderNumber: params.orderNumber || "ORD-2025-001",
     productName: params.productName || "Binhi ng Palay",
-    quantity: params.quantity || "5 KG",
-    currentStatus: typeof params.currentStatus === 'number' ? params.currentStatus : 1,
+    quantity: params.quantity || "5 Sako",
+    currentStatus: typeof params.currentStatus === 'number' ? params.currentStatus : 2, // Changed to 2 for delivered
     estimatedDelivery: params.estimatedDelivery || "Hunyo 22, 2025",
     deliveryTime: params.deliveryTime || "2-3 araw",
     riderPhone: params.riderPhone || "0917-123-4567",
     riderName: params.riderName || "Juan dela Cruz",
     totalPrice: params.totalPrice || "₱2,500",
-    pricePerUnit: params.pricePerUnit || "₱500/kg",
+    pricePerUnit: params.pricePerUnit || "₱500/Sako",
     orderDate: params.orderDate || "Hunyo 20, 2025",
     deliveryAddress: params.deliveryAddress || "123 Barangay Maligaya, Quezon City"
   });
@@ -58,7 +58,7 @@ const OrderStatusTracker = ({ route }) => {
       subtitle: "Natanggap na ninyo ang order",
       icon: "home",
       color: "#87BE42",
-      time: "Estimated 2:00 PM"
+      time: "2:15 PM" // Updated to show actual delivery time
     }
   ];
 
@@ -83,7 +83,7 @@ const OrderStatusTracker = ({ route }) => {
   };
 
   const handleReorder = () => {
-    console.log('Reordering product');
+    router.push('/catalog');
   };
 
   const handleCallSupport = () => {
@@ -151,13 +151,24 @@ const OrderStatusTracker = ({ route }) => {
           </View>
         </View>
 
+        {/* Delivery Success Banner */}
+        {/* <View style={styles.successBanner}>
+          <View style={styles.successIcon}>
+            <Icon name="check-circle" size={32} color="#22c55e" />
+          </View>
+          <View style={styles.successContent}>
+            <Text style={styles.successTitle}>Order Delivered Successfully!</Text>
+            <Text style={styles.successSubtitle}>Salamat sa inyong pagbili</Text>
+          </View>
+        </View> */}
+
         {/* Status Progress Card */}
         <View style={styles.statusCard}>
           <Text style={styles.sectionTitle}>Tracking ng Order</Text>
           
           <View style={styles.statusContainer}>
             {statusSteps.map((step, index) => {
-              const isCompleted = step.id < orderData.currentStatus;
+              const isCompleted = step.id <= orderData.currentStatus;
               const isCurrent = step.id === orderData.currentStatus;
               
               return (
@@ -171,11 +182,7 @@ const OrderStatusTracker = ({ route }) => {
                           { backgroundColor: getStatusColor(step.id) }
                         ]}
                       >
-                        {isCompleted ? (
-                          <Icon name="check-circle" size={24} color="#ffffff" />
-                        ) : (
-                          <Icon name={step.icon} size={20} color={getIconColor(step.id)} />
-                        )}
+                        <Icon name="check-circle" size={24} color="#ffffff" />
                       </View>
                       
                       {/* Connecting Line */}
@@ -221,12 +228,12 @@ const OrderStatusTracker = ({ route }) => {
                         {step.subtitle}
                       </Text>
                       
-                      {/* Current status indicator */}
+                      {/* Current status indicator for delivered */}
                       {isCurrent && (
                         <View style={styles.currentStatusContainer}>
-                          <View style={styles.pulseDot} />
-                          <Text style={styles.currentStatusText}>
-                            Kasalukuyang Status
+                          <View style={styles.completedDot} />
+                          <Text style={styles.completedStatusText}>
+                            Tapos na!
                           </Text>
                         </View>
                       )}
@@ -242,44 +249,15 @@ const OrderStatusTracker = ({ route }) => {
         <View style={styles.deliveryCard}>
           <View style={styles.deliveryHeader}>
             <View style={styles.deliveryIcon}>
-              <Icon name="schedule" size={24} color="#2563eb" />
+              <Icon name="done" size={24} color="#22c55e" />
             </View>
             <View style={styles.deliveryInfo}>
-              <Text style={styles.deliveryTitle}>Kailan kayo makakatanggap?</Text>
-              {orderData.currentStatus < 2 ? (
-                <View>
-                  <Text style={styles.deliveryDate}>{orderData.estimatedDelivery}</Text>
-                  <Text style={styles.deliveryTime}>({orderData.deliveryTime} mula ngayon)</Text>
-                </View>
-              ) : (
-                <Text style={styles.deliveryDate}>Nadeliver na po!</Text>
-              )}
+              <Text style={styles.deliveryTitle}>Delivery Status</Text>
+              <Text style={styles.deliveryDate}>Nadeliver na po!</Text>
+              <Text style={styles.deliveryTime}>Natanggap noong {statusSteps[2].time}</Text>
             </View>
           </View>
         </View>
-
-        {/* Rider Information Card */}
-        {orderData.currentStatus === 1 && (
-          <View style={styles.riderCard}>
-            <Text style={styles.sectionTitle}>Driver Information</Text>
-            <View style={styles.riderInfo}>
-              <View style={styles.riderIconContainer}>
-                <Icon name="person" size={24} color="#f59e0b" />
-              </View>
-              <View style={styles.riderDetails}>
-                <Text style={styles.riderName}>{orderData.riderName}</Text>
-                <Text style={styles.riderPhone}>{orderData.riderPhone}</Text>
-              </View>
-              <TouchableOpacity 
-                style={styles.callButton}
-                onPress={handleCallRider}
-              >
-                <Icon name="phone" size={18} color="#ffffff" />
-                <Text style={styles.callButtonText}>Tawagan</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
 
         {/* Delivery Address Card */}
         <View style={styles.addressCard}>
@@ -298,7 +276,7 @@ const OrderStatusTracker = ({ route }) => {
         <View style={styles.actionContainer}>
           <TouchableOpacity 
             style={styles.primaryButton}
-            onPress={orderData.currentStatus < 2 ? handleCallRider : handleReorder}
+            onPress={handleReorder}
           >
             <LinearGradient
               colors={['#15803d', '#22c55e']}
@@ -306,14 +284,8 @@ const OrderStatusTracker = ({ route }) => {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
             >
-              <Icon 
-                name={orderData.currentStatus < 2 ? "phone" : "refresh"} 
-                size={20} 
-                color="#ffffff" 
-              />
-              <Text style={styles.primaryButtonText}>
-                {orderData.currentStatus < 2 ? "Tawagan ang Rider" : "Mag-order Ulit"}
-              </Text>
+              <Icon name="refresh" size={20} color="#ffffff" />
+              <Text style={styles.primaryButtonText}>Mag-order Ulit</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -445,12 +417,38 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#15803d',
   },
+  successBanner: {
+    backgroundColor: '#f0fdf4',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderLeftWidth: 4,
+    borderLeftColor: '#22c55e',
+  },
+  successIcon: {
+    marginRight: 16,
+  },
+  successContent: {
+    flex: 1,
+  },
+  successTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#15803d',
+    marginBottom: 4,
+  },
+  successSubtitle: {
+    fontSize: 14,
+    color: '#22c55e',
+  },
   statusCard: {
     backgroundColor: '#ffffff',
     borderRadius: 20,
     padding: 20,
     marginBottom: 20,
-    elevation: 3,
+    elevation: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -521,25 +519,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
-  pulseDot: {
+  completedDot: {
     width: 8,
     height: 8,
     backgroundColor: '#22c55e',
     borderRadius: 4,
     marginRight: 8,
   },
-  currentStatusText: {
+  completedStatusText: {
     fontSize: 12,
     fontWeight: '600',
     color: '#15803d',
   },
   deliveryCard: {
-    backgroundColor: '#eff6ff',
+    backgroundColor: '#f0fdf4',
     borderRadius: 20,
     padding: 20,
     marginBottom: 20,
     borderLeftWidth: 4,
-    borderLeftColor: '#3b82f6',
+    borderLeftColor: '#22c55e',
   },
   deliveryHeader: {
     flexDirection: 'row',
@@ -548,7 +546,7 @@ const styles = StyleSheet.create({
   deliveryIcon: {
     width: 48,
     height: 48,
-    backgroundColor: '#dbeafe',
+    backgroundColor: '#dcfce7',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -560,76 +558,25 @@ const styles = StyleSheet.create({
   deliveryTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#1e40af',
+    color: '#15803d',
     marginBottom: 8,
   },
   deliveryDate: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1d4ed8',
+    color: '#15803d',
     marginBottom: 4,
   },
   deliveryTime: {
     fontSize: 14,
-    color: '#3b82f6',
-  },
-  riderCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 20,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  riderInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  riderIconContainer: {
-    width: 48,
-    height: 48,
-    backgroundColor: '#fef3c7',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  riderDetails: {
-    flex: 1,
-  },
-  riderName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 4,
-  },
-  riderPhone: {
-    fontSize: 14,
-    color: '#6b7280',
-  },
-  callButton: {
-    backgroundColor: '#15803d',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  callButtonText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
-    marginLeft: 4,
+    color: '#22c55e',
   },
   addressCard: {
     backgroundColor: '#ffffff',
     borderRadius: 20,
     padding: 20,
     marginBottom: 20,
-    elevation: 3,
+    elevation: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,

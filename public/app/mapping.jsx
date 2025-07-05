@@ -1033,8 +1033,8 @@ export default function Mapping() {
                             <Icon name={crop.icon && crop.icon !== 'help' && crop.icon !== 'question-mark' ? crop.icon : 'agriculture'} size={28} color="#15803d" />
                           </View>
                           <View style={styles.cropListInfo}>
-                            <Text style={styles.cropListName}>{crop.cropName}</Text>
-                            <Text style={styles.cropListTagalog}>{crop.tagalogName}</Text>
+                            <Text style={styles.cropListName}>{crop.tagalogName}</Text>
+                            <Text style={styles.cropListTagalog}>{crop.cropName}</Text>
                             <Text style={styles.cropListScientific}>{crop.scientificName}</Text>
                           </View>
                           <View style={[styles.recommendationBadge, { backgroundColor: getRecommendationColor(crop.suitabilityScore) + '20' }]}> 
