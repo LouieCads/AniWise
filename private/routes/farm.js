@@ -244,8 +244,8 @@ router.post("/recommend-crops", authenticateToken, async (req, res) => {
       {
         "recommendations": [
           {
-            "cropName": "Pangalan ng pananim (English)",
-            "tagalogName": "Pangalan ng pananim (Tagalog)",
+            "cropName": "Pangalan ng pananim (Tagalog)",
+            "tagalogName": "Pangalan ng pananim (English)",
             "scientificName": "Scientific Name",
             "suitabilityScore": "Excellent/Good/Fair/Basta simple lang",
             "reasoning": "Maikling paliwanag kung bakit ito angkop (Tagalog/Taglish)",
@@ -295,8 +295,8 @@ router.post("/recommend-crops", authenticateToken, async (req, res) => {
       recommendedCrops = {
         recommendations: [
           {
-            cropName: "Rice",
-            tagalogName: "Palay",
+            cropName: "Palay",
+            tagalogName: "Rice",
             scientificName: "Oryza sativa",
             suitabilityScore: "Good",
             reasoning: "Based on the soil conditions provided",

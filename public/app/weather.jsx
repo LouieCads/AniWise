@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 0 : 20,
+    paddingTop: Platform.OS === 'ios' ? 0 : 38,
     paddingBottom: 20,
     elevation: 4,
     shadowColor: '#000',
