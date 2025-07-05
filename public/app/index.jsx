@@ -2,6 +2,8 @@ import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Image, ImageBackgr
 import { Link, router, } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 
+const getApiUrl = () => process.env.EXPO_PUBLIC_API_URL || 'http://192.168.254.169:3000';
+
 export default function WelcomeScreen() {
   return (
     <ImageBackground 

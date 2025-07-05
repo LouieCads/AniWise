@@ -16,6 +16,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
 
+const getApiUrl = () => process.env.EXPO_PUBLIC_API_URL || 'http://192.168.254.169:3000';
+
 const OrderStatusTracker = ({ route }) => {
   const params = route?.params || {};
   const [orderData] = useState({

@@ -5,13 +5,7 @@ import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const getApiUrl = () => {
-  if (__DEV__) {
-    return 'http://10.8.10.242:3000';
-  } else {
-    return 'https://10.8.10.242:3000';
-  }
-};
+const getApiUrl = () => process.env.EXPO_PUBLIC_API_URL || 'http://192.168.254.169:3000';
 
 const statusColors = {
   'Pending': '#f59e42',

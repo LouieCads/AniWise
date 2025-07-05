@@ -1,6 +1,9 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Link } from "expo-router";
 
+const getApiUrl = () =>
+  process.env.EXPO_PUBLIC_API_URL || "http://192.168.254.169:3000";
+
 export default function WelcomeScreen() {
   return (
     <View style={styles.container}>

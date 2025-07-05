@@ -16,6 +16,8 @@ import { router } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
 
+const getApiUrl = () => process.env.EXPO_PUBLIC_API_URL || 'http://192.168.254.169:3000';
+
 const OnboardingScreen = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [fadeAnim] = useState(new Animated.Value(0));

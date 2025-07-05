@@ -14,6 +14,7 @@ import { router } from 'expo-router';
 import MapView, { Marker } from 'react-native-maps';
 import { LinearGradient } from 'expo-linear-gradient';
 
+const getApiUrl = () => process.env.EXPO_PUBLIC_API_URL || 'http://192.168.254.169:3000';
 
 const ProductPickup = () => {
   const [selectedLocation, setSelectedLocation] = useState(null);

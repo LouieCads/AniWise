@@ -14,6 +14,8 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 
+const getApiUrl = () => process.env.EXPO_PUBLIC_API_URL || 'http://192.168.254.169:3000';
+
 const SimpleRepaymentPage = ({ route }) => {
   // Loan information
   const [loanInfo] = useState({

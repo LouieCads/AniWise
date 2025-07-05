@@ -125,13 +125,7 @@ const productsData = [
   }
 ];
 
-const getApiUrl = () => {
-  if (__DEV__) {
-    return 'http://192.168.100.2:3000';
-  } else {
-    return 'https://192.168.100.2:3000';
-  }
-};
+const getApiUrl = () => process.env.EXPO_PUBLIC_API_URL || 'http://192.168.254.169:3000';
 
 const getAuthToken = async () => {
   try {

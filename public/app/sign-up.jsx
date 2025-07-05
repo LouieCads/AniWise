@@ -24,6 +24,8 @@ const SignUpSchema = Yup.object().shape({
     .min(8, 'Password ay dapat 8 characters o higit pa'),
 });
 
+const getApiUrl = () => process.env.EXPO_PUBLIC_API_URL || 'http://192.168.254.169:3000';
+
 export default function SignUp() {
   // New state to manage password visibility
   const [showPassword, setShowPassword] = useState(false);
@@ -46,7 +48,7 @@ export default function SignUp() {
 
   const handleSignUp = async (values, { setSubmitting }) => {
     try {
-      const response = await fetch('http://192.168.100.2:3000/api/signup', {
+      const response = await fetch(`${getApiUrl()}/api/signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
