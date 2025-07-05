@@ -37,7 +37,7 @@ const ProductDetailsPage = ({ route }) => {
   // Modal state
   const [isLoanModalVisible, setIsLoanModalVisible] = useState(false);
   const [isReviewModalVisible, setIsReviewModalVisible] = useState(false);
-  const [selectedSize, setSelectedSize] = useState('1 KG');
+  const [selectedSize, setSelectedSize] = useState('1 Sako');
   const [loanFormData, setLoanFormData] = useState({
     pangalan: '',
     contactNumber: '',
@@ -103,6 +103,21 @@ const ProductDetailsPage = ({ route }) => {
     totalReviews: 23,
   };
   const productData = { ...defaultProduct, ...(route?.params || {}) };
+
+  // Function to get quantity from selected size
+  const getQuantityFromSize = (size) => {
+    const match = size.match(/(\d+)/);
+    return match ? parseInt(match[1]) : 1;
+  };
+
+  // Function to calculate dynamic price based on quantity
+  const calculateDynamicPrice = (basePrice, quantity) => {
+    return basePrice * quantity;
+  };
+
+  // Get current quantity and calculated price
+  const currentQuantity = getQuantityFromSize(selectedSize);
+  const currentTotalPrice = calculateDynamicPrice(productData.price, currentQuantity);
 
   const handleAddToCart = () => {
     console.log('Added to cart:', productData.name, 'Size:', selectedSize);
@@ -238,6 +253,17 @@ const ProductDetailsPage = ({ route }) => {
   useEffect(() => {
     setTotalPrice(quantity * pricePerUnit);
   }, [quantity, pricePerUnit]);
+
+  // Update loan form when selectedSize changes
+  useEffect(() => {
+    const newQuantity = getQuantityFromSize(selectedSize);
+    const newPricePerUnit = productData.price;
+    const newTotalPrice = newQuantity * newPricePerUnit;
+    
+    setQuantity(newQuantity);
+    setPricePerUnit(newPricePerUnit);
+    setTotalPrice(newTotalPrice);
+  }, [selectedSize, productData.price]);
 
   // Fetch user profile and credit limit
   useEffect(() => {
@@ -384,8 +410,10 @@ const ProductDetailsPage = ({ route }) => {
           <Text style={styles.category}>{productData.category}</Text>
           <View style={styles.namePriceContainer}>
             <Text style={styles.productName}>{productData.name}</Text>
-            {/* Displaying price per kilo logic here, based on selectedSize or default */}
-            <Text style={styles.price}>₱{productData.price.toFixed(0)} / {selectedSize}</Text>
+            {/* Dynamic pricing based on selected size */}
+            <View style={styles.priceContainer}>
+              <Text style={styles.price}>₱{currentTotalPrice.toFixed(0)}</Text>
+            </View>
           </View>
 
           {/* Rating Summary */}
@@ -448,8 +476,7 @@ const ProductDetailsPage = ({ route }) => {
           </View>
         </View>
 
-        {/* Bypass Buttons
-        <View style={styles.bypassButtonsContainer}>
+        {/* <View style={styles.bypassButtonsContainer}>
           <TouchableOpacity style={styles.bypassButton} onPress={() => router.push('product-repayment')}>
             <Text style={styles.bypassButtonText}>Go to Product Repayment</Text>
           </TouchableOpacity>
@@ -506,7 +533,7 @@ const ProductDetailsPage = ({ route }) => {
 
           <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
             <Text style={styles.modalSubtitle}>
-              Para sa {productData.name} (₱{pricePerUnit} bawat sako/kilo)
+              Para sa {productData.name} (₱{pricePerUnit} bawat sako)
             </Text>
 
             <View style={styles.formContainer}>
@@ -562,7 +589,7 @@ const ProductDetailsPage = ({ route }) => {
                 />
               </View>
 
-              <View style={styles.inputContainer}>
+              {/* <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Trabaho</Text>
                 <TextInput
                   style={styles.textInput}
@@ -571,19 +598,7 @@ const ProductDetailsPage = ({ route }) => {
                   placeholder="Anong trabaho ninyo?"
                   placeholderTextColor="#9ca3af"
                 />
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Buwanang Kita</Text>
-                <TextInput
-                  style={styles.textInput}
-                  value={loanFormData.kita}
-                  onChangeText={(value) => setLoanFormData(prev => ({ ...prev, kita: value }))}
-                  placeholder="PHP 0.00"
-                  placeholderTextColor="#9ca3af"
-                  keyboardType="numeric"
-                />
-              </View>
+              </View> */}
 
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Dahilan ng Pag-loan</Text>
@@ -598,9 +613,9 @@ const ProductDetailsPage = ({ route }) => {
                 />
               </View>
 
-              <View style={styles.inputContainer}>
+              {/* <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Pangalan ng Pananim *</Text>
-                {/* Display productData.name as read-only */}
+
                 <Text style={[styles.textInput, styles.disabledInput]}>{productData.name}</Text>
               </View>
 
@@ -609,7 +624,7 @@ const ProductDetailsPage = ({ route }) => {
                 <TextInput
                   style={styles.textInput}
                   value={quantity.toString()}
-                  onChangeText={v => setQuantity(Number(v.replace(/[^0-9]/g, '')) || '')}
+                  onChangeText={v => setQuantity(Number(v.replace(/[^0-9]/g, '')) || 1)}
                   placeholder="1"
                   placeholderTextColor="#9ca3af"
                   keyboardType="numeric"
@@ -618,13 +633,13 @@ const ProductDetailsPage = ({ route }) => {
 
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Presyo bawat kilo/sako</Text>
-                <Text style={styles.textInput} editable={false}>₱{pricePerUnit}</Text>
+                <Text style={styles.textInput}>₱{pricePerUnit}</Text>
               </View>
 
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Kabuuang Halaga</Text>
-                <Text style={styles.textInput} editable={false}>₱{totalPrice.toLocaleString()}</Text>
-              </View>
+                <Text style={styles.textInput}>₱{totalPrice.toLocaleString()}</Text>
+              </View> */}
 
               {creditLimit !== null && (
                 <Text style={{ color: '#888', marginBottom: 10 }}>
