@@ -18,6 +18,7 @@ import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
+const getApiUrl = () => process.env.EXPO_PUBLIC_API_URL || 'http://192.168.254.169:3000';
 
 const WeatherPage = () => {
   const [currentWeather, setCurrentWeather] = useState(null);
@@ -39,7 +40,7 @@ const WeatherPage = () => {
         return;
       }
       // Fetch user's farms
-      const farmRes = await fetch('http://192.168.100.2:3000/api/farms/my', {
+      const farmRes = await fetch(`${getApiUrl()}/api/farms/my`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const farmData = await farmRes.json();
