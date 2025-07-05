@@ -59,7 +59,7 @@ const getConditionStyle = (condition) => {
 const { width, height } = Dimensions.get('window');
 
 // Move API key to environment variables or secure storage
-const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY || '98bb67c7b4f0e326ccdfebd2e15577f3';
+const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 
 export default function Mapping() {
   const [farmLocation, setFarmLocation] = useState('');
